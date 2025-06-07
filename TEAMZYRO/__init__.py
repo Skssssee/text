@@ -24,13 +24,13 @@ def LOGGER(name: str) -> logging.Logger:
     return logging.getLogger(name)
 
 # ---------------------------- CONSTANTS ---------------------------------
-api_id = os.getenv("API_ID", "24965086")
-api_hash = os.getenv("API_HASH", "b9c764ce47c010e1a887f19fea54f648")
+api_id = os.getenv("API_ID", "23343216")
+api_hash = os.getenv("API_HASH", "1d66f21cd828dc22b80e3750719bd94a")
 TOKEN = os.getenv("TOKEN", "7687059872:AAF9eK6Xc-UgiGPvui9i9XXA1YHrSxdhlI0")
-GLOG = os.getenv("GLOG", "Zlog12")
-CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "Zlog12")
-SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002309742084")
-mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Alisha:Alisha123@cluster0.yqcpftw.mongodb.net/?retryWrites=true&w=majority")
+GLOG = os.getenv("GLOG", "gojo_waifu")
+CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "gojo_waifu")
+SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002891249230")
+mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu")
 
 # Modified to support both image and video URLs
 START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/7ccoub.jpg,https://telegra.ph/file/1a3c152717eb9d2e94dc2.mp4").split(',')
@@ -40,10 +40,10 @@ PHOTO_URL = [
     os.getenv("PHOTO_URL_2", "https://files.catbox.moe/7ccoub.jpg")
 ]
 
-SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/Zyroupdates")
-UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/ZyroBotCodes")
-SUDO = list(map(int, os.getenv("SUDO", "7577185215,5749187175").split(',')))
-OWNER_ID = int(os.getenv("OWNER_ID", "7073835511"))
+SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/II_CHATS_II")
+UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/GOJO_SUPPORT_GROUP_II")
+SUDO = list(map(int, os.getenv("SUDO", "6197601655").split(',')))
+OWNER_ID = int(os.getenv("OWNER_ID", "7553434931"))
 
 # --------------------- TELEGRAM BOT CONFIGURATION -----------------------
 command_filter = f.create(lambda _, __, message: message.text and message.text.startswith("/"))
