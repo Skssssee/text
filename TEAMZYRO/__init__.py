@@ -29,7 +29,7 @@ api_hash = os.getenv("API_HASH", "1d66f21cd828dc22b80e3750719bd94a")
 TOKEN = os.getenv("TOKEN", "8018957937:AAFBWIwewR-nf0_EC10-Z_9HJWz5K64YGlI")
 GLOG = os.getenv("GLOG", "gojo_waifu")
 CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "gojo_waifu")
-SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002891249230")
+SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002792716047")
 mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu")
 
 # Modified to support both image and video URLs
