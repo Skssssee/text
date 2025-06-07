@@ -23,11 +23,11 @@ async def generate_start_message(client, message):
     ping = round(time.time() - message.date.timestamp(), 2)
     uptime = get_uptime()
     
-    caption = f"""🍃 ɢʀᴇᴇᴛɪɴɢs, ɪ'ᴍ {bot_name} 🫧, ɴɪᴄᴇ ᴛᴏ ᴍᴇᴇᴛ ʏᴏᴜ!
+    caption = f"""🍃 ɢʀᴇᴇᴛɪɴɢs,👋 ɪ'ᴍ {bot_name} 🫧, 🥂ɴɪᴄᴇ ᴛᴏ ᴍᴇᴇᴛ ʏᴏᴜ!
 ━━━━━━━▧▣▧━━━━━━━
 ⦾ ᴡʜᴀᴛ ɪ ᴅᴏ: ɪ sᴘᴀᴡɴ   
      ᴡᴀɪғᴜs ɪɴ ʏᴏᴜʀ ᴄʜᴀᴛ ғᴏʀ
-     ᴜsᴇʀs ᴛᴏ ɢʀᴀʙ.
+     ᴜsᴇʀs ᴛᴏ ɢʀᴀʙ🥀.
 ⦾ ᴛᴏ ᴜsᴇ ᴍᴇ: ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ
      ɢʀᴏᴜᴘ ᴀɴᴅ ᴛᴀᴘ ᴛʜᴇ ʜᴇʟᴘ
      ʙᴜᴛᴛᴏɴ ғᴏʀ ᴅᴇᴛᴀɪʟs.
@@ -36,11 +36,11 @@ async def generate_start_message(client, message):
 ➺ ᴜᴘᴛɪᴍᴇ: {uptime}"""
 
     buttons = [
-        [InlineKeyboardButton("Aᴅᴅ Tᴏ Yᴏᴜʀ Gʀᴏᴜᴘ ", url=f"https://t.me/{bot_user.username}?startgroup=true")],
-        [InlineKeyboardButton("Sᴜᴘᴘᴏʀᴛ", url=SUPPORT_CHAT), 
-         InlineKeyboardButton("Cʜᴀɴɴᴇʟ", url=UPDATE_CHAT)],
-        [InlineKeyboardButton("Hᴇʟᴘ", callback_data="open_help")],
-        [InlineKeyboardButton("Gɪᴛʜᴜʙ", url="https://github.com/MrZyro/ZyroWaifu")]
+        [InlineKeyboardButton("◦ᴀᴅᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ◦", url=f"https://t.me/{bot_user.username}?startgroup=true")],
+        [InlineKeyboardButton("◦sᴜᴘᴘᴏʀᴛ◦", url=SUPPORT_CHAT), 
+         InlineKeyboardButton("◦ᴄʜᴀɴɴᴇʟ◦", url=UPDATE_CHAT)],
+        [InlineKeyboardButton("◦ʜᴇʟᴘ◦", callback_data="open_help")],
+        [InlineKeyboardButton("◦ᴍʏ ʟᴏʀᴅ◦", url="http://t.me/II_YOUR_GOJO_ll")]
     ]
     
     return caption, InlineKeyboardMarkup(buttons)
@@ -51,8 +51,8 @@ async def generate_group_start_message(client):
     caption = f"🍃 ɪ'ᴍ {bot_user.first_name} 🫧\nɪ sᴘᴀᴡɴ ᴡᴀɪғᴜs ɪɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ ғᴏʀ ᴜsᴇʀs ᴛᴏ ɢʀᴀʙ.\nᴜsᴇ /help ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ."
     buttons = [
         [
-            InlineKeyboardButton("Aᴅᴅ Mᴇ", url=f"https://t.me/{bot_user.username}?startgroup=true"),
-            InlineKeyboardButton("Sᴜᴘᴘᴏʀᴛ", url=SUPPORT_CHAT)
+            InlineKeyboardButton("◦ᴀᴅᴅ ᴍᴇ◦", url=f"https://t.me/{bot_user.username}?startgroup=true"),
+            InlineKeyboardButton("◦sᴜᴘᴘᴏʀᴛ◦", url=SUPPORT_CHAT)
         ]
     ]
     return caption, InlineKeyboardMarkup(buttons)
