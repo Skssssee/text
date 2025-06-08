@@ -70,27 +70,9 @@
       "required": true
     }
   },
-  "stack": "heroku-22",
-  "formation": {
-    "worker": {
-      "quantity": 1,
-      "size": "free"
-    }
-  },
-  "addons": [
-    {
-      "plan": "heroku-postgresql:hobby-dev",
-      "options": {
-        "version": "13"
-      }
-    }
-  ],
   "buildpacks": [
     {
       "url": "heroku/python"
     }
-  ],
-  "scripts": {
-    "postdeploy": "python -m pip install -r requirements.txt"
-  }
+  ]
 }
