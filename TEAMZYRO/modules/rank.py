@@ -15,7 +15,7 @@ async def rank(client, message):
     leaderboard_data.sort(key=lambda x: len(x.get('characters', [])), reverse=True)
     leaderboard_data = leaderboard_data[:10]
 
-    leaderboard_message = "<b>TOP 10 USERS WITH MOST CHARACTERS</b>\n\n"
+    leaderboard_message = "<b>ᴛᴏᴘ 10 ᴜsᴇʀs ᴡɪᴛʜ ᴍᴏsᴛ ᴄʜᴀʀᴀᴄᴛᴇʀs</b>\n\n"
     for i, user in enumerate(leaderboard_data, start=1):
         user_id = user.get('id', 'Unknown')
         first_name = html.escape(user.get('first_name', 'Unknown'))[:15] + '...'
@@ -66,7 +66,7 @@ async def top_callback(client, callback_query):
     leaderboard_data.sort(key=lambda x: len(x.get('characters', [])), reverse=True)
     leaderboard_data = leaderboard_data[:10]
 
-    caption = "<b>TOP 10 USERS WITH MOST CHARACTERS</b>\n\n"
+    caption = "<b>ᴛᴏᴘ 10 ᴜsᴇʀs ᴡɪᴛʜ ᴍᴏsᴛ ᴄʜᴀʀᴀᴄᴛᴇʀs</b>\n\n"
     for i, user in enumerate(leaderboard_data, start=1):
         user_id = user.get('id', 'Unknown')
         first_name = html.escape(user.get('first_name', 'Unknown'))[:15] + '...'
@@ -98,7 +98,7 @@ async def mtop_callback(client, callback_query):
     await asyncio.sleep(1)
     top_users = await user_collection.find().sort("balance", -1).limit(10).to_list(length=10)
 
-    caption = "<b>MTOP LEADERBOARD</b>\n\n🏆 Tᴏᴘ 10 Uꜱᴇʀs ʙʏ Cᴏɪɴs:\n\n"
+    caption = "<b>MTOP LEADERBOARD</b>\n\n🏆 ᴛᴏᴘ 10 ᴜsᴇʀs ʙʏ ᴄᴏɪɴs:\n\n"
     for rank, user in enumerate(top_users, start=1):
         user_id = user.get("id", "Unknown")
         first_name = user.get("first_name", "Unknown")
@@ -112,7 +112,7 @@ async def tokens_callback(client, callback_query):
     await asyncio.sleep(1)
     top_users = await user_collection.find().sort("tokens", -1).limit(10).to_list(length=10)
 
-    caption = "<b>Tokens LEADERBOARD</b>\n\n🏆 Tᴏᴘ 10 Uꜱᴇʀs ʙʏ Tokens:\n\n"
+    caption = "<b>Tokens LEADERBOARD</b>\n\n🏆 ᴛᴏᴘ 10 ᴜsᴇʀs ʙʏ ᴛᴏᴋᴇɴs:\n\n"
     for rank, user in enumerate(top_users, start=1):
         user_id = user.get("id", "Unknown")
         first_name = user.get("first_name", "Unknown")
