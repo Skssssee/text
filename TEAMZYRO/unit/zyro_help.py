@@ -2,7 +2,7 @@
 
 HELP_DATA = {
     "balance": {
-        "HELP_NAME": "Bᴀʟ Aɴᴅ Pᴀʏ",
+        "HELP_NAME": "⦿ʙᴀʟ ᴀɴᴅ ᴘᴀʏ⦿",
         "HELP": """
 💰 **Balance Commands**:
 - `/balance` → Check your balance.
@@ -20,7 +20,7 @@ HELP_DATA = {
 """
     },
     "check": {
-        "HELP_NAME": "Cʜᴇᴄᴋ",
+        "HELP_NAME": "⦿ᴄʜᴇᴄᴋ⦿",
         "HELP": """
 Use `/check <character_id>` to view details of a character.
 
@@ -30,7 +30,7 @@ Use `/check <character_id>` to view details of a character.
 """
     },
     "guess": {
-        "HELP_NAME": "Gᴜᴇss",
+        "HELP_NAME": "⦿ɢᴜᴇss⦿",
         "HELP": """
 Use `/guess <character_name>` to guess the mystery character.
 
@@ -41,7 +41,7 @@ Use `/guess <character_name>` to guess the mystery character.
 """
     },
     "harem": {
-        "HELP_NAME": "Hᴀʀᴇᴍ",
+        "HELP_NAME": "⦿ʜᴀʀᴇᴍ⦿",
         "HELP": """
 Use `/harem` or `/collection` to view your collected characters.
 
@@ -54,7 +54,7 @@ Characters are grouped by anime and show the count you own.
 """
     },
     "inline": {
-        "HELP_NAME": "Iɴʟɪɴᴇ",
+        "HELP_NAME": "⦿ɪɴʟɪɴᴇ⦿",
         "HELP": """
 Use inline queries to search for characters or view collections.
 
@@ -67,7 +67,7 @@ Results include character name, anime, rarity, and image/video.
 """
     },
     "favorites": {
-        "HELP_NAME": "Fᴀᴠᴏʀɪᴛᴇs",
+        "HELP_NAME": "⦿ғᴀᴠᴏᴜʀɪᴛᴇs⦿",
         "HELP": """
 Add your favorite characters to your collection.
 
@@ -79,7 +79,7 @@ Note: You can only favorite characters that are in your collection.
 """
     },
     "claim": {
-        "HELP_NAME": "Cʟᴀɪᴍ",
+        "HELP_NAME": "⦿ᴄʟᴀɪᴍ⦿",
         "HELP": """
 Claim a free character every day! 🌟
 
@@ -91,7 +91,7 @@ Claim a free character every day! 🌟
 """
     },
     "requests": {
-        "HELP_NAME": "Rᴇǫᴜᴇsᴛs",
+        "HELP_NAME": "⦿ʀᴇǫᴜᴇsᴛs⦿",
         "HELP": """
 Use the following command to request a character:
 
@@ -102,7 +102,7 @@ Once requested, the owner will review and approve or deny your request.
 """
     },
     "gift": {
-        "HELP_NAME": "Gɪғᴛ",
+        "HELP_NAME": "⦿ɢɪғᴛ⦿",
         "HELP": """
 🎁 **Gift System**  
 Send characters to other users using the `/gift` command.
@@ -119,7 +119,7 @@ Send characters to other users using the `/gift` command.
 """
     },
     "jackpot": {
-        "HELP_NAME": "Jᴀᴄᴋᴘᴏᴛ",
+        "HELP_NAME": "⦿ᴊᴀᴄᴋᴇᴛ⦿",
         "HELP": """
 🎰 **Jackpot Game**  
 Try your luck with the jackpot and win coins!
@@ -138,7 +138,7 @@ Try your luck with the jackpot and win coins!
 """
     },
     "rankings": {
-        "HELP_NAME": "Rᴀɴᴋɪɴɢs",
+        "HELP_NAME": "⦿ʀᴀɴᴋɪɴɢs⦿",
         "HELP": """
 🏆 **Rankings & Leaderboards**  
 Check out the top users and groups in different categories!
@@ -159,7 +159,7 @@ Check out the top users and groups in different categories!
 """
     },
     "game": {
-        "HELP_NAME": "Gᴀᴍᴇ",
+        "HELP_NAME": "⦿ɢᴀᴍᴇ⦿",
         "HELP": """
 🎮 **Classic Word Game Help** 🎮  
 
@@ -181,7 +181,7 @@ Enjoy playing! 🎉
 """
     },
     "sips": {
-        "HELP_NAME": "Sɪᴘs",
+        "HELP_NAME": "⦿sɪᴘs⦿",
         "HELP": """
 Use this command to search for characters by name.
 
@@ -197,7 +197,7 @@ Each result includes:
 """
     },
     "shop": {
-        "HELP_NAME": "Sʜᴏᴘ",
+        "HELP_NAME": "⦿sʜᴏᴘ⦿",
         "HELP": """
 🛒 Shop Commands:
 - /shop - Open the shop menu.
@@ -215,7 +215,7 @@ Each result includes:
 """
     },
     "new_char": {
-        "HELP_NAME": "Nᴇᴡ Cʜᴀʀ",
+        "HELP_NAME": "⦿ɴᴇᴡ ᴄʜᴀʀ⦿",
         "HELP": """
 ➤ /addchar character-name anime-name - Upload a character with an image.
 
