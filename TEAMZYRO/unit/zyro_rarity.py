@@ -10,7 +10,8 @@ rarity_map = {
     9: "❄️ Winter",
     10: "🏖 Summer",
     11: "🎗 Royal",
-    12: "💸 Luxury Edition"
+    12: "💸 Luxury Edition",
+    13: "🍃 echhi"
 }
 
 RARITY_NAMES = [
@@ -25,7 +26,8 @@ RARITY_NAMES = [
     "❄️ Winter",
     "🏖 Summer",
     "🎗 Royal",
-    "💸 Luxury Edition"
+    "💸 Luxury Edition",
+    "🍃 echhi"
 ]
 
 rarity_map2 = {
@@ -40,7 +42,8 @@ rarity_map2 = {
     "❄️ Winter": "❄️",
     "🏖 Summer": "🏖",
     "🎗 Royal": "🎗",
-    "💸 Luxury Edition": "💸"
+    "💸 Luxury Edition": "💸",
+    "🍃 echhi": "🍃"
 }
 
 
