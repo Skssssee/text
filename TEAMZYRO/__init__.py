@@ -42,7 +42,7 @@ PHOTO_URL = [
 
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/II_CHATS_II")
 UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/GOJO_SUPPORT_GROUP_II")
-SUDO = list(map(int, os.getenv("SUDO", "7875411241").split(',')))
+SUDO = list(map(int, os.getenv("SUDO", "7450385463").split(',')))
 OWNER_ID = int(os.getenv("OWNER_ID", "7553434931"))
 
 # --------------------- TELEGRAM BOT CONFIGURATION -----------------------
