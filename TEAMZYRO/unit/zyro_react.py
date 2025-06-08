@@ -2,7 +2,7 @@ import random
 import requests
 from TEAMZYRO import *
 
-emojis = ["👍", "😘", "❤️", "🔥", "🥰", "🤩", "💘", "😏", "🤯", "⚡️", "🏆", "🤭", "🎉"]
+emojis = ["👍", "😘", "❤️", "🔥", "🥰", "🤩", "💘", "😏", "🤯", "⚡️", "🏆", "🤭", "🎉","🤗","😈","😎"]
 
 async def react_to_message(chat_id, message_id):
     # Choose a random emoji from the list
