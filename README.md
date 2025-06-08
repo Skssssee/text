@@ -1,3 +1,11 @@
+<h1 align="center"><b>[⚡] 𝗚𝗢𝗝𝗢 𝗫 𝗖𝗔𝗧𝗖𝗛𝗘𝗥 [⚡]</b></h1>
+
+<h4 align="center">𝐏𝐎𝐖𝐄𝐑𝐅𝐔𝐋 𝗖𝗔𝗧𝗖𝗛𝗘𝗥 𝗕𝗢𝗧</h4>
+
+<p align="center"><a href="https://t.me/PyXen"><img src="https://files.catbox.moe/wzydml.jpg" width="400"></a></p>
+
+
+> ⭐️ Thanks to everyone for using this op WAIFU BOT. That is the greatest pleasure we have !
 # Welcome to Our Project
 
 ## Quick Deploy to Heroku
