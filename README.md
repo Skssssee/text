@@ -1,6 +1,8 @@
 <h1 align="center"><b>[⚡] 𝗚𝗢𝗝𝗢 𝗫 𝗖𝗔𝗧𝗖𝗛𝗘𝗥 [⚡]</b></h1>
 
-<h4 align="center">𝐏𝐎𝐖𝐄𝐑𝐅𝐔𝐋 𝗖𝗔𝗧𝗖𝗛𝗘𝗥 𝗕𝗢𝗧</h4>
+</h2>
+
+[![Typing SVG](https://readme-typing-svg.herokuapp.com/?lines=ㅤ+𝚆𝙴𝙻𝙲𝙾𝙼𝙴+𝚃𝙾+ɢᴏᴊᴏ+ᴄᴀᴛᴄʜᴇʀ+𝚁𝙴𝙿𝙾+;ㅤ+𝚃𝙷𝙸𝚂+𝙸𝚂+𝙰+𝙰𝙳𝚅𝙰𝙽𝙲𝙴+ᴡᴀɪғᴜ+ᴄᴀᴛᴄʜᴇʀ+𝙱𝙾𝚃;𝙿𝙾𝚆𝙴𝚁𝙴𝙳+𝙱𝚈+☞+𝗧𝗛𝗘+𝗧𝗘𝗔𝗠+𝗚𝗢𝗝𝗢)]
 
 <p align="center"><a href="https://t.me/PyXen"><img src="https://files.catbox.moe/wzydml.jpg" width="400"></a></p>
 
@@ -10,7 +12,7 @@
 
 ## Quick Deploy to Heroku
 
-[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https://github.com/MrZyro/ZyroWaifu)
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https://github.com/HKMUSIC/Gojowaifu)
 
 <p align="center">
   <a href="https://t.me/Zyroupdates">
