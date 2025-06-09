@@ -12,7 +12,7 @@ async def rarity_count(client, message):
             await message.reply_text("⚠️ No rarities found in the database.")
             return
         
-        response_message = "🥀 ᴄʜᴀʀᴀᴄᴛᴇʀ ᴄᴏᴜɴᴛ ʙʏ ʀᴀʀɪᴛʏ 🥀\n\n"
+        response_message = "🥀ᴄʜᴀʀᴀᴄᴛᴇʀ ᴄᴏᴜɴᴛ ʙʏ ʀᴀʀɪᴛʏ🥀\n\n"
         
         # Loop through each rarity and count the number of characters
         for rarity in distinct_rarities:
