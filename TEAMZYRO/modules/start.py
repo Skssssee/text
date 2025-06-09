@@ -32,11 +32,12 @@ async def generate_start_message(client, message):
 🕹️ ʜᴏᴡ ᴛᴏ ᴘʟᴀʏ:  
 ⦾ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ 🫂  
 ⦾ ᴛᴀᴘ ᴛʜᴇ **ʜᴇʟᴘ** ʙᴜᴛᴛᴏɴ🧾  
-⦾ ᴄᴏʟʟᴇᴄᴛ, ᴄᴏᴍᴘᴇᴛᴇ & ʙᴇ ᴛʜᴇ ᴡᴀɪꜰᴜ ᴋɪɴɢ 🌸  
+⦾ ᴄᴏʟʟᴇᴄᴛ, ᴄᴏᴍᴘᴇᴛᴇ & ʙᴇ ᴛʜᴇ ᴡᴀɪꜰᴜ ᴋɪɴɢ 🌸
+
+🥂 ʟᴇᴛ ᴛʜᴇ ᴡᴀɪꜰᴜ ʜᴜɴᴛ ʙᴇɢɪɴ...  
 ━━━━━━━▧▣▧━━━━━━━
 ➺ ᴘɪɴɢ: {ping} ms
 ➺ ᴜᴘᴛɪᴍᴇ: {uptime}"""
-🥂 ʟᴇᴛ ᴛʜᴇ ᴡᴀɪꜰᴜ ʜᴜɴᴛ ʙᴇɢɪɴ...  
 
     buttons = [
         [InlineKeyboardButton("◦ᴀᴅᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ◦", url=f"https://t.me/{bot_user.username}?startgroup=true")],
