@@ -18,7 +18,7 @@ async def on_new_chat_members(client: Client, message: Message):
         added_by = message.from_user.mention if message.from_user else "ᴜɴᴋɴᴏᴡɴ ᴜsᴇʀ"
         chat_title = message.chat.title
         chat_id = message.chat.id
-        chat_username = f"@{message.chat.username}" if message.chat.username else "ᴩʀɪᴠᴀᴛ"
+        chat_username = f"@{message.chat.username}" if message.chat.username else "ᴩʀɪᴠᴀᴛᴇ"
 
         # Construct the log message
         log_message = (
@@ -33,21 +33,21 @@ async def on_new_chat_members(client: Client, message: Message):
 
         # Check if the group has less than 30 members
         chat_members_count = await client.get_chat_members_count(chat_id)
-        if chat_members_count < 30:
+        if chat_members_count < 15:
             leave_message = (
                 f"#leftgroup\n\n"
                 f"chat name : {chat_title}\n"
                 f"chat username : {chat_username}\n"
-                f"reason : Group has less than 30 members"
+                f"reason : Group has less than 15 members"
             )
             await send_log_message(chat_id, leave_message)
-            # Leave the group if it has less than 30 members
+            # Leave the group if it has less than 15 members
             await client.leave_chat(chat_id)
             leave_message = (
                 f"#leftgroup\n\n"
                 f"chat name : {chat_title}\n"
                 f"chat username : {chat_username}\n"
-                f"reason : Group has less than 30 members"
+                f"reason : Group has less than 15 members"
             )
             await send_log_message(GLOG, leave_message)
 
