@@ -4,7 +4,7 @@
 
 ![Typing SVG](https://readme-typing-svg.herokuapp.com/?lines=ㅤ+𝚆𝙴𝙻𝙲𝙾𝙼𝙴+𝚃𝙾+ɢᴏᴊᴏ+ᴄᴀᴛᴄʜᴇʀ+𝚁𝙴𝙿𝙾+;ㅤ+𝚃𝙷𝙸𝚂+𝙸𝚂+𝙰+𝙰𝙳𝚅𝙰𝙽𝙲𝙴+ᴡᴀɪғᴜ+ᴄᴀᴛᴄʜᴇʀ+𝙱𝙾𝚃;𝙿𝙾𝚆𝙴𝚁𝙴𝙳+𝙱𝚈+☞+𝗧𝗛𝗘+𝗧𝗘𝗔𝗠+𝗚𝗢𝗝𝗢)
 
-<p align="center"><a href="https://t.me/PyXen"><img src="https://files.catbox.moe/wzydml.jpg" width="400"></a></p>
+<p align="center"><a href="https://t.me/PyXen"><img src="https://files.catbox.moe/wzydml.jpg" width="600"></a></p>
 
 
 > ⭐️ Thanks to everyone for using this op WAIFU BOT. That is the greatest pleasure we have !
