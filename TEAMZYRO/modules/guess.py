@@ -86,6 +86,18 @@ async def guess(client: Client, message: Message):
                 'characters': [last_characters[chat_id]],
             })
 
+        # Update group count in top_global_groups_collection (new code)
+        if message.chat.type in [enums.ChatType.GROUP, enums.ChatType.SUPERGROUP]:
+            group_name = message.chat.title or f"Group_{chat_id}"
+            await top_global_groups_collection.update_one(
+                {'chat_id': chat_id},
+                {
+                    '$set': {'group_name': group_name},
+                    '$inc': {'count': 1}
+                },
+                upsert=True
+            )
+
         await react_to_message(chat_id, message.id)
 
         # Fetch user again to update balance
@@ -128,12 +140,3 @@ async def guess(client: Client, message: Message):
             )
         else:
             await message.reply_text('❌ Not quite right, brave guesser! Try again! 🕵️‍♂️')
-
-
-HELP_NAME = "Gᴜᴇss"
-HELP = """Use `/guess <character_name>` to guess the mystery character.
-
-- Earn 40 coins for a correct guess.
-- The first correct guess captures the character.
-- If incorrect, you can try again.
-- A 'See Harem' button lets you view your collected characters."""
