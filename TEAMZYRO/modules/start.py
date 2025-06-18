@@ -47,7 +47,7 @@ async def generate_start_message(client, message):
         [InlineKeyboardButton("◦ᴍʏ ʟᴏʀᴅ◦", url="http://t.me/II_YOUR_GOJO_ll")]
     ]
     
-    return caption, InlineKeyboardMarkup(buttons)
+    return caption, buttons
 
 # 🔹 Function to Generate Group Start Message & Buttons
 async def generate_group_start_message(client):
@@ -57,9 +57,8 @@ async def generate_group_start_message(client):
         [
             InlineKeyboardButton("◦ᴀᴅᴅ ᴍᴇ◦", url=f"https://t.me/{bot_user.username}?startgroup=true"),
             InlineKeyboardButton("◦sᴜᴘᴘᴏʀᴛ◦", url=SUPPORT_CHAT)
-        ]
     ]
-    return caption, InlineKeyboardMarkup(buttons)
+    return caption, buttons
 
 # 🔹 Private Start Command Handler
 @app.on_message(filters.command("start") & filters.private)
@@ -91,13 +90,13 @@ async def start_private_command(client, message):
         await message.reply_photo(
             photo=media,
             caption=caption,
-            reply_markup=buttons
+            reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
         )
     else:
         await message.reply_video(
             video=media,
             caption=caption,
-            reply_markup=buttons
+            reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
         )
 
 # 🔹 Group Start Command Handler
@@ -111,13 +110,13 @@ async def start_group_command(client, message):
         await message.reply_photo(
             photo=media,
             caption=caption,
-            reply_markup=buttons
+            reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
         )
     else:
         await message.reply_video(
             video=media,
             caption=caption,
-            reply_markup=buttons
+            reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
         )
 
 # 🔹 Function to Find Help Modules
@@ -141,7 +140,7 @@ async def show_help_menu(client, query: CallbackQuery):
         """*ᴄʜᴏᴏsᴇ ᴛʜᴇ ᴄᴀᴛᴇɢᴏʀʏ ғᴏʀ ᴡʜɪᴄʜ ʏᴏᴜ ᴡᴀɴɴᴀ ɢᴇᴛ ʜᴇʟᴩ.
 
 ᴀʟʟ ᴄᴏᴍᴍᴀɴᴅs ᴄᴀɴ ʙᴇ ᴜsᴇᴅ ᴡɪᴛʜ : /""",
-        reply_markup=InlineKeyboardMarkup(buttons)
+        reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
     )
 
 # 🔹 Individual Module Help Handler
@@ -155,7 +154,10 @@ async def show_help(client, query: CallbackQuery):
         help_text = module_data.get("HELP", "Is module ka koi help nahi hai.")
         buttons = [[InlineKeyboardButton("⬅ Back", callback_data="open_help")]]
         
-        await query.message.edit_text(f"**{module_name} Help:**\n\n{help_text}", reply_markup=InlineKeyboardMarkup(buttons))
+        await query.message.edit_text(
+            f"**{module_name} Help:**\n\n{help_text}",
+            reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
+        )
     except Exception as e:
         await query.answer("Help load karne me error aayi!")
 
@@ -164,4 +166,7 @@ async def show_help(client, query: CallbackQuery):
 async def back_to_home(client, query: CallbackQuery):
     time.sleep(1)
     caption, buttons = await generate_start_message(client, query.message)
-    await query.message.edit_text(caption, reply_markup=buttons)
+    await query.message.edit_text(
+        caption,
+        reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
+    )
