@@ -44,12 +44,12 @@ async def generate_redeem_code(client, message):
 
     # Formatting message properly
     char_info = (
-        f"🎭 *Character:* `{character['name']}`\n"
-        f"📺 *Anime:* `{character.get('anime', 'Unknown')}`\n"
-        f"🌟 *Rarity:* `{character.get('rarity', 'Unknown')}`\n"
-        f"🖼 *Image:* [Click Here]({character.get('img_url', '#' )})\n\n"
-        f"🔢 *Redeem Limit:* `{redeem_limit}`\n"
-        f"🎟 *Redeem Code:* `{redeem_code}`"
+        f"🎭 ᴄʜᴀʀᴀᴄᴛᴇʀ :`{character['name']}`\n"
+        f"📺 ᴀɴɪᴍᴇ : `{character.get('anime', 'Unknown')}`\n"
+        f"🌟 ʀᴀʀɪᴛʏ : `{character.get('rarity', 'Unknown')}`\n"
+        f"🖼 ɪᴍᴀɢᴇ : [Click Here]({character.get('img_url', '#' )})\n\n"
+        f"🔢 ʀᴇᴅᴇᴇᴍ ʟɪᴍɪᴛ : `{redeem_limit}`\n"
+        f"🎟 ʀᴇᴅᴇᴇᴍ ᴄᴏᴅᴇ : `{redeem_code}`"
     )
 
     await message.reply_text(f"✅ *Redeem code generated!*\n\n{char_info}", 
