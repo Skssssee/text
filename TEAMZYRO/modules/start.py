@@ -23,28 +23,24 @@ async def generate_start_message(client, message):
     ping = round(time.time() - message.date.timestamp(), 2)
     uptime = get_uptime()
     
-    caption = f"""🥂 𝗟𝗲𝘁 𝘁𝗵𝗲 𝘄𝗮𝗶𝗳𝘂 𝗵𝘂𝗻𝘁 𝗯𝗲𝗴𝗶𝗻... 🍃 𝐆𝐑𝐄𝐄𝐓𝐈𝐍𝐆𝐒, 𝐌𝐎𝐑𝐓𝐀𝐋! 👋 ɪ'ᴍ {bot_name} 🫧,💫 — ʏᴏᴜʀ ᴜʟᴛɪᴍᴀᴛᴇ ᴡᴀɪғᴜ ʜᴜɴᴛɪɴɢ ᴄᴏᴍᴘᴀɴɪᴏɴ!🥂ɴɪᴄᴇ ᴛᴏ ᴍᴇᴇᴛ ʏᴏᴜ! 🩵
+    caption = f"""🍃 ɢʀᴇᴇᴛɪɴɢs, ɪ'ᴍ {bot_name} 🫧, ɴɪᴄᴇ ᴛᴏ ᴍᴇᴇᴛ ʏᴏᴜ!
 ━━━━━━━▧▣▧━━━━━━━
-🫧 ᴡʜᴀᴛ ɪ ᴅᴏ:  
-⦾ ɪ ꜱᴘᴀᴡɴ ʀᴀʀᴇ & ʀᴀɴᴅᴏᴍ ᴡᴀɪꜰᴜꜱ 💖  
-⦾ ꜰɪʀꜱᴛ ᴛᴏ ɢʀᴀʙ = ꜱʜᴇ’ꜱ ʏᴏᴜʀꜱ ꜰᴏʀᴇᴠᴇʀ 🎯
-
-🕹️ ʜᴏᴡ ᴛᴏ ᴘʟᴀʏ:  
-⦾ ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ 🫂  
-⦾ ᴛᴀᴘ ᴛʜᴇ **ʜᴇʟᴘ** ʙᴜᴛᴛᴏɴ🧾  
-⦾ ᴄᴏʟʟᴇᴄᴛ, ᴄᴏᴍᴘᴇᴛᴇ & ʙᴇ ᴛʜᴇ ᴡᴀɪꜰᴜ ᴋɪɴɢ 🌸
-
-🥂 ʟᴇᴛ ᴛʜᴇ ᴡᴀɪꜰᴜ ʜᴜɴᴛ ʙᴇɢɪɴ...  
+⦾ ᴡʜᴀᴛ ɪ ᴅᴏ: ɪ sᴘᴀᴡɴ   
+     ᴡᴀɪғᴜs ɪɴ ʏᴏᴜʀ ᴄʜᴀᴛ ғᴏʀ
+     ᴜsᴇʀs ᴛᴏ ɢʀᴀʙ.
+⦾ ᴛᴏ ᴜsᴇ ᴍᴇ: ᴀᴅᴅ ᴍᴇ ᴛᴏ ʏᴏᴜʀ
+     ɢʀᴏᴜᴘ ᴀɴᴅ ᴛᴀᴘ ᴛʜᴇ ʜᴇʟᴘ
+     ʙᴜᴛᴛᴏɴ ғᴏʀ ᴅᴇᴛᴀɪʟs.
 ━━━━━━━▧▣▧━━━━━━━
 ➺ ᴘɪɴɢ: {ping} ms
 ➺ ᴜᴘᴛɪᴍᴇ: {uptime}"""
 
     buttons = [
-        [InlineKeyboardButton("◦ᴀᴅᴅ ᴛᴏ ʏᴏᴜʀ ɢʀᴏᴜᴘ◦", url=f"https://t.me/{bot_user.username}?startgroup=true")],
-        [InlineKeyboardButton("◦sᴜᴘᴘᴏʀᴛ◦", url=SUPPORT_CHAT), 
-         InlineKeyboardButton("◦ᴄʜᴀɴɴᴇʟ◦", url=UPDATE_CHAT)],
-        [InlineKeyboardButton("◦ʜᴇʟᴘ◦", callback_data="open_help")],
-        [InlineKeyboardButton("◦ᴍʏ ʟᴏʀᴅ◦", url="http://t.me/II_YOUR_GOJO_ll")]
+        [InlineKeyboardButton("Aᴅᴅ Tᴏ Yᴏᴜʀ Gʀᴏᴜᴘ ", url=f"https://t.me/{bot_user.username}?startgroup=true")],
+        [InlineKeyboardButton("Sᴜᴘᴘᴏʀᴛ", url=SUPPORT_CHAT), 
+         InlineKeyboardButton("Cʜᴀɴɴᴇʟ", url=UPDATE_CHAT)],
+        [InlineKeyboardButton("Hᴇʟᴘ", callback_data="open_help")],
+        [InlineKeyboardButton("Gɪᴛʜᴜʙ", url="https://github.com/MrZyro/ZyroWaifu")]
     ]
     
     return caption, buttons
@@ -55,8 +51,9 @@ async def generate_group_start_message(client):
     caption = f"🍃 ɪ'ᴍ {bot_user.first_name} 🫧\nɪ sᴘᴀᴡɴ ᴡᴀɪғᴜs ɪɴ ʏᴏᴜʀ ɢʀᴏᴜᴘ ғᴏʀ ᴜsᴇʀs ᴛᴏ ɢʀᴀʙ.\nᴜsᴇ /help ғᴏʀ ᴍᴏʀᴇ ɪɴғᴏ."
     buttons = [
         [
-            InlineKeyboardButton("◦ᴀᴅᴅ ᴍᴇ◦", url=f"https://t.me/{bot_user.username}?startgroup=true"),
-            InlineKeyboardButton("◦sᴜᴘᴘᴏʀᴛ◦", url=SUPPORT_CHAT)
+            InlineKeyboardButton("Aᴅᴅ Mᴇ", url=f"https://t.me/{bot_user.username}?startgroup=true"),
+            InlineKeyboardButton("Sᴜᴘᴘᴏʀᴛ", url=SUPPORT_CHAT)
+        ]
     ]
     return caption, buttons
 
@@ -169,4 +166,4 @@ async def back_to_home(client, query: CallbackQuery):
     await query.message.edit_text(
         caption,
         reply_markup=InlineKeyboardMarkup(buttons)  # Pass InlineKeyboardMarkup directly
-    )
+        )
