@@ -40,7 +40,7 @@ async def generate_start_message(client, message):
         [InlineKeyboardButton("Sᴜᴘᴘᴏʀᴛ🥀", url=SUPPORT_CHAT), 
          InlineKeyboardButton("Cʜᴀɴɴᴇʟ🥀", url=UPDATE_CHAT)],
         [InlineKeyboardButton("Hᴇʟᴘ🥀", callback_data="open_help")],
-        [InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴘᴇʀ🥀", url="https://github.com/MrZyro/ZyroWaifu")]
+        [InlineKeyboardButton("ᴅᴇᴠᴇʟᴏᴘᴇʀ🥀", url="http://t.me/II_YOUR_GOJO_ll")]
     ]
     
     return caption, buttons
