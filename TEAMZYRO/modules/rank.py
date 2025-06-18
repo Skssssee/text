@@ -6,7 +6,7 @@ import html
 from TEAMZYRO import app as Client
 from TEAMZYRO import user_collection, top_global_groups_collection
 
-PHOTO_URL = ["https://files.catbox.moe/s8ggxy.jpg"]  
+PHOTO_URL = ["https://files.catbox.moe/9j8e6b.jpg"]  
 
 @Client.on_message(filters.command("rank"))
 async def rank(client, message):
@@ -24,12 +24,12 @@ async def rank(client, message):
 
     buttons = [
         [
-            InlineKeyboardButton("✅ Top", callback_data="top"),
-            InlineKeyboardButton("Top Group", callback_data="top_group"),
+            InlineKeyboardButton("ᴛᴏᴘ🥀", callback_data="top"),
+            InlineKeyboardButton("ᴛᴏᴘ ɢʀᴏᴜᴘ🥀", callback_data="top_group"),
         ],
         [
-            InlineKeyboardButton("MTOP", callback_data="mtop"),
-            InlineKeyboardButton("Tokens", callback_data="tokens"),
+            InlineKeyboardButton("ᴍᴛᴏᴘ🥀", callback_data="mtop"),
+            InlineKeyboardButton("ᴛᴏᴋᴇɴs🥀", callback_data="tokens"),
         ],
     ]
 
@@ -43,12 +43,12 @@ async def rank(client, message):
 async def update_caption(callback_query, caption, active_button):
     buttons = [
         [
-            InlineKeyboardButton("✅ ᴛᴏᴘ" if active_button == "top" else "Top", callback_data="top"),
-            InlineKeyboardButton("✅ ᴛᴏᴘ ɢʀᴏᴜᴘ" if active_button == "top_group" else "Top Group", callback_data="top_group"),
+            InlineKeyboardButton("ᴛᴏᴘ🥀" if active_button == "top" else "Top", callback_data="top"),
+            InlineKeyboardButton("ᴛᴏᴘ ɢʀᴏᴜᴘ🥀" if active_button == "top_group" else "Top Group", callback_data="top_group"),
         ],
         [
-            InlineKeyboardButton("✅ ᴍᴛᴏᴘ" if active_button == "mtop" else "MTOP", callback_data="mtop"),
-            InlineKeyboardButton("✅ ᴛᴏᴋᴇɴs" if active_button == "tokens" else "Tokens", callback_data="tokens"),
+            InlineKeyboardButton("ᴍᴛᴏᴘ🥀" if active_button == "mtop" else "MTOP", callback_data="mtop"),
+            InlineKeyboardButton("ᴛᴏᴋᴇɴs🥀" if active_button == "tokens" else "Tokens", callback_data="tokens"),
         ],
     ]
 
@@ -98,7 +98,7 @@ async def mtop_callback(client, callback_query):
     await asyncio.sleep(1)
     top_users = await user_collection.find().sort("balance", -1).limit(10).to_list(length=10)
 
-    caption = "<b>ᴍᴛᴏᴘ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n🏆 ᴛᴏᴘ 10 ᴜsᴇʀs ʙʏ ᴄᴏɪɴs:\n\n"
+    caption = "<b>ᴍᴛᴏᴘ ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n🏆 Tᴏᴘ 10 Uꜱᴇʀs ʙʏ Cᴏɪɴs:\n\n"
     for rank, user in enumerate(top_users, start=1):
         user_id = user.get("id", "Unknown")
         first_name = user.get("first_name", "Unknown")
@@ -112,7 +112,7 @@ async def tokens_callback(client, callback_query):
     await asyncio.sleep(1)
     top_users = await user_collection.find().sort("tokens", -1).limit(10).to_list(length=10)
 
-    caption = "<b>ᴛᴏᴋᴇɴs ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n🏆 ᴛᴏᴘ 10 ᴜsᴇʀs ʙʏ ᴛᴏᴋᴇɴs:\n\n"
+    caption = "<b>ᴛᴏᴋᴇɴs ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n🏆 Tᴏᴘ 10 Uꜱᴇʀs ʙʏ Tokens:\n\n"
     for rank, user in enumerate(top_users, start=1):
         user_id = user.get("id", "Unknown")
         first_name = user.get("first_name", "Unknown")
