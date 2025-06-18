@@ -1,10 +1,8 @@
-
 from TEAMZYRO import *
 import random
 import asyncio
 from telegram import Update
 from telegram.ext import CallbackContext
-
 
 log = "-1002792716047"
 
@@ -33,32 +31,24 @@ RARITY_WEIGHTS = {
 async def send_image(update: Update, context: CallbackContext) -> None:
     chat_id = update.effective_chat.id
 
-    all_characters = list(await collection.find({}).to_list(length=None))
+    # Fetch all characters from MongoDB
+    all_characters = list(await collection.find({"rarity": {"$in": [k for k, v in RARITY_WEIGHTS.items() if v[1]]}}).to_list(length=None))
 
-    if chat_id not in sent_characters:
-        sent_characters[chat_id] = []
+    if not all_characters:
+        await context.bot.send_message(chat_id, "No characters found with allowed rarities in the database.")
+        return
 
-    if len(sent_characters[chat_id]) == len(all_characters):
-        sent_characters[chat_id] = []
-
-    if chat_id in last_characters and last_characters[chat_id].get('ranaway', False):
-        del last_characters[chat_id]
-
-    if 'available_characters' not in context.user_data:
-        context.user_data['available_characters'] = [
-            c for c in all_characters 
-            if 'id' in c 
-            and c['id'] not in sent_characters.get(chat_id, [])
-            and c.get('rarity') is not None 
-            and RARITY_WEIGHTS.get(c['rarity'], (0, False))[1]  # True wali rarities allow
-        ]
-
-    available_characters = context.user_data['available_characters']
+    # Filter characters with valid rarity
+    available_characters = [
+        c for c in all_characters 
+        if 'id' in c and c.get('rarity') is not None and RARITY_WEIGHTS.get(c['rarity'], (0, False))[1]
+    ]
 
     if not available_characters:
         await context.bot.send_message(chat_id, "No available characters with the allowed rarities.")
         return
 
+    # Weighted random selection
     cumulative_weights = []
     cumulative_weight = 0
     for character in available_characters:
@@ -75,10 +65,8 @@ async def send_image(update: Update, context: CallbackContext) -> None:
     if not selected_character:
         selected_character = random.choice(available_characters)
 
-    sent_characters[chat_id].append(selected_character['id'])
-    last_characters[chat_id] = selected_character
-
-    last_characters[chat_id]['timestamp'] = time.time()
+    # Clear first_correct_guesses if exists
+    last_characters[chat_id] = character
     
     if chat_id in first_correct_guesses:
         del first_correct_guesses[chat_id]
@@ -92,7 +80,6 @@ async def send_image(update: Update, context: CallbackContext) -> None:
 🔍 Use /guess to claim this mysterious character!
 💫 Hurry, before someone else snatches them!""",
             parse_mode='Markdown'
-           
         )
     else:
         sent_message = await context.bot.send_photo(
@@ -102,14 +89,7 @@ async def send_image(update: Update, context: CallbackContext) -> None:
 🔍 Use /guess to claim this mysterious character!
 💫 Hurry, before someone else snatches them!""",
             parse_mode='Markdown'
-            
         )
-        
-    last_characters[chat_id]['message_id'] = sent_message.message_id
 
     # Schedule message deletion after 5 minutes
     asyncio.create_task(delete_message(chat_id, sent_message.message_id, context))
-
-    asyncio.create_task(delete_message(chat_id, sent_message.message_id, context))
-
-
