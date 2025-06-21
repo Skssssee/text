@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, x
 from pymongo import MongoClient
 from TEAMZYRO import *
 from functools import wraps
@@ -24,8 +24,8 @@ def require_power(required_power):
             if isinstance(message, CallbackQuery):
                 # This is a callback query, not a regular message
                 user_id = message.from_user.id
-                # If the user is the owner, bypass the power check
-                if user_id == OWNER_ID:
+                # If the user is the owner or an instance of Owner, bypass the power check
+                if user_id == OWNER_ID or isinstance(user_id, Owner):
                     return await func(client, message, *args, **kwargs)
 
                 # Otherwise, check if the user has the required power
@@ -38,8 +38,8 @@ def require_power(required_power):
 
             # Regular message handling
             user_id = message.from_user.id
-            # If the user is the owner, bypass the power check
-            if user_id == OWNER_ID:
+            # If the user is the owner or an instance of Owner, bypass the power check
+            if user_id == OWNER_ID or isinstance(user_id, Owner):
                 return await func(client, message, *args, **kwargs)
 
             # Otherwise, check if the user has the required power
@@ -51,4 +51,3 @@ def require_power(required_power):
             return await func(client, message, *args, **kwargs)
         return wrapper
     return decorator
-
