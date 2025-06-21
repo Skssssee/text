@@ -116,7 +116,7 @@ async def update_multiple(client: Client, message: Message):
     try:
         args = message.text.split()
         if len(args) < 4:
-            await message.reply_text('Incorrect format. Use: /gupdate id1,id2,id3 field new_value')
+            await message.reply_text('Incorrect format. Use: /maxupdate id1,id2,id3 field new_value')
             return
 
         # Parse multiple character IDs
@@ -125,7 +125,7 @@ async def update_multiple(client: Client, message: Message):
         new_value = ' '.join(args[3:])
 
         # Validate field
-        valid_fields = ['img_url', 'name', 'anime', 'rarity']
+        valid_fields = ['img_url', 'vid_url', 'name', 'anime', 'rarity']  # Added vid_url
         if field_to_update not in valid_fields:
             await message.reply_text(f'Invalid field. Use one of: {", ".join(valid_fields)}')
             return
