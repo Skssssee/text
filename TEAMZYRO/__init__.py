@@ -4,6 +4,7 @@ import os
 from telegram.ext import Application
 from motor.motor_asyncio import AsyncIOMotorClient
 from pyrogram import Client, filters as f
+from pyrogram.types import x
 
 # --------------------------- LOGGING SETUP ------------------------------
 logging.basicConfig(
@@ -32,6 +33,8 @@ CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "gojo_waifu")
 SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002792716047")
 mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu")
 
+MUSJ_JOIN = os.getenv("MUSJ_JOIN", "username")
+
 # Modified to support both image and video URLs
 START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/7ccoub.jpg,https://files.catbox.moe/s8ggxy.jpg,https://files.catbox.moe/qqelwn.jpg,https://telegra.ph/file/1a3c152717eb9d2e94dc2.mp4").split(',')
 
@@ -39,6 +42,8 @@ PHOTO_URL = [
     os.getenv("PHOTO_URL_1", "https://files.catbox.moe/qqelwn.jpg"),
     os.getenv("PHOTO_URL_2", "https://files.catbox.moe/7ccoub.jpg")
 ]
+
+STATS_IMG = ["https://files.catbox.moe/gknnju.jpg"]
 
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/II_CHATS_II")
 UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/GOJO_SUPPORT_GROUP_II")
