@@ -67,6 +67,7 @@ async def send_image(update: Update, context: CallbackContext) -> None:
 
     # Clear first_correct_guesses if exists
     last_characters[chat_id] = character
+    last_characters[chat_id]['timestamp'] = time.time()
     
     if chat_id in first_correct_guesses:
         del first_correct_guesses[chat_id]
