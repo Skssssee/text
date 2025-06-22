@@ -1,7 +1,7 @@
 import asyncio
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from pyrogram.enums import ParseMode  # Import the correct ParseMode enum
+from pyrogram.enums import ParseMode
 
 from TEAMZYRO import user_collection, ZYRO
 
@@ -79,16 +79,32 @@ async def gift(client, message):
 
     keyboard = InlineKeyboardMarkup(
         [
-            [InlineKeyboardButton("Confirm Gift", callback_data="confirm_gift")],
-            [InlineKeyboardButton("Cancel Gift", callback_data="cancel_gift")]
+            [InlineKeyboardButton("✅ Confirm Gift", callback_data="confirm_gift")],
+            [InlineKeyboardButton("❌ Cancel Gift", callback_data="cancel_gift")]
         ]
     )
 
-    await message.reply_text(
-        f"Do you really want to gift {message.reply_to_message.from_user.mention}?",
-        parse_mode=ParseMode.MARKDOWN,
-        reply_markup=keyboard
+    # Prepare character details for caption
+    caption = (
+        f"🎁 <b>Gift Character</b>\n"
+        f"🌸 <b>{character.get('name', 'Unknown')}</b>\n"
     )
+
+    # Send the character image with caption and buttons
+    if character.get('img_url'):
+        await message.reply_photo(
+            photo=character['img_url'],
+            caption=caption,
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard
+        )
+    else:
+        # fallback if no image
+        await message.reply_text(
+            caption,
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard
+        )
 
     # Start the auto-cancel task for this gift
     asyncio.create_task(auto_cancel_gift(sender_id, receiver_id))
@@ -114,7 +130,7 @@ async def on_callback_query(client, callback_query):
 
         # Mark the gift as processed
         gift['processed'] = True
-        
+
         sender = await user_collection.find_one({'id': sender_id})
         receiver = await user_collection.find_one({'id': receiver_id})
 
@@ -134,20 +150,37 @@ async def on_callback_query(client, callback_query):
 
         del pending_gifts[(sender_id, receiver_id)]
 
-        # Edit the message to disable the buttons
-        await callback_query.message.edit_text(
-            f"You have successfully gifted your character to [{gift['receiver_first_name']}](tg://user?id={receiver_id})!",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=None
+        # Edit the message to disable the buttons and update caption
+        new_caption = (
+            f"🎉 <b>Gift Successful!</b>\n\n"
+            f"You have successfully gifted your character to "
+            f"<a href='tg://user?id={receiver_id}'>{gift['receiver_first_name']}</a>!"
         )
+        try:
+            await callback_query.message.edit_caption(
+                caption=new_caption,
+                parse_mode=ParseMode.HTML,
+                reply_markup=None
+            )
+        except Exception:
+            await callback_query.message.edit_text(
+                new_caption,
+                parse_mode=ParseMode.HTML,
+                reply_markup=None
+            )
 
     elif callback_query.data == "cancel_gift":
         del pending_gifts[(sender_id, receiver_id)]
-        
-        # Edit the message to disable the buttons
-        await callback_query.message.edit_text(
-            "❌️ Gift cancelled.",
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=None
-        )
-
+        cancel_caption = "❌️ Gift cancelled."
+        try:
+            await callback_query.message.edit_caption(
+                caption=cancel_caption,
+                parse_mode=ParseMode.HTML,
+                reply_markup=None
+            )
+        except Exception:
+            await callback_query.message.edit_text(
+                cancel_caption,
+                parse_mode=ParseMode.HTML,
+                reply_markup=None
+    )
