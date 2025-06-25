@@ -6,7 +6,7 @@ import html
 async def get_balance(user_id):
     user_data = await user_collection.find_one({'id': user_id}, {'balance': 1, 'tokens': 1})
     if user_data:
-        return user_data.get('ʙᴀʟᴀɴᴄᴇ', 0), user_data.get('ᴛᴏᴋᴇɴs', 0)
+        return user_data.get('balance', 0), user_data.get('tokens', 0)
     return 0, 0
 
 @app.on_message(filters.command("balance"))
