@@ -23,36 +23,6 @@ async def generate_start_message(client, message):
     ping = round(time.time() - message.date.timestamp(), 2)
     uptime = get_uptime()
 
-    ]
-GREET = [
-    "💞", "🥂", "🔍", "🧪", "🥂", "⚡️", "🔥",
-]
-
-
-
-@app.on_message(filters.command(["start"]) & filters.private & ~BANNED_USERS)
-@LanguageStart
-async def start_pm(client, message: Message, _):
-
-    loading_1 = await message.reply_text(random.choice(GREET))
-    await add_served_user(message.from_user.id)
-    
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>ʟᴏᴀᴅɪɴɢ..</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>ʟᴏᴀᴅɪɴɢ...</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>ʜєʏ ʙᴧʙʏ! 💞</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>𝐆𝐎𝐉𝐎</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>𝐆𝐎𝐉𝐎 ✘</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>𝐆𝐎𝐉𝐎 ✘ 𝐂𝐀𝐓𝐂𝐇𝐄𝐑</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.edit_text("<b>𝐆𝐎𝐉𝐎 ✘ 𝐂𝐀𝐓𝐂𝐇𝐄𝐑\nsᴛᴧʀᴛєᴅ!💕</b>")
-    await asyncio.sleep(0.1)
-    await loading_1.delete()
     
     caption = f"""🍃 ɢʀᴇᴇᴛɪɴɢs, ɪ'ᴍ {bot_name} 🫧, ɴɪᴄᴇ ᴛᴏ ᴍᴇᴇᴛ ʏᴏᴜ!
 ━━━━━━━▧▣▧━━━━━━━
