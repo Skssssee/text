@@ -1,4 +1,4 @@
-from TEAMZYRO import users  # MongoDB collection
+from TEAMZYRO import users
 
 def get_or_create_user(user_id: int):
     user = users.find_one({"_id": user_id})
