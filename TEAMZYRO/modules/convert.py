@@ -1,8 +1,9 @@
-from TEAMZYRO import app, filters
+from pyrogram import filters
+from TEAMZYRO import app  
 from pymongo import MongoClient
 from pyrogram.types import Message
 
-# MongoDB setup
+# MongoDB Setup
 MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"
 mongo = MongoClient(MONGO_URL)
 db = mongo["waifu_bot"]
