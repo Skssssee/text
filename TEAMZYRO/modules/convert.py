@@ -3,7 +3,7 @@ from TEAMZYRO import app
 from pymongo import MongoClient
 from pyrogram.types import Message
 
-# MongoDB Setup (Your DB)
+# MongoDB Setup
 MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"
 mongo = MongoClient(MONGO_URL)
 db = mongo["waifu_bot"]
@@ -34,7 +34,7 @@ async def convert_coins(client, message: Message):
 
     tokens_earned = coins_to_convert // TOKEN_RATE
     if tokens_earned == 0:
-        return await message.reply("❌ Not enough coins to convert into even 1 token!", quote=True)
+        return await message.reply("❌ Not enough coins to convert even 1 token!", quote=True)
 
     coins_after = current_coins - coins_to_convert
     new_tokens = current_tokens + tokens_earned
