@@ -1,13 +1,12 @@
 import logging
 import sys
 import time
-from pymongo import MongoClient  
+from pymongo import MongoClient
 
 MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"
 mongo = MongoClient(MONGO_URL)
 db = mongo["waifu_bot"]
-users = db["users"]  
-StartTime = time.time()
+users = db["users"]  # ✅ This makes 'users' importable
 
 # enable logging
 logging.basicConfig(
