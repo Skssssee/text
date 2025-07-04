@@ -1,4 +1,4 @@
-from pyrogram import Client, filters
+from TEAMZYRO import app, filters
 from pymongo import MongoClient
 from pyrogram.types import Message
 
@@ -10,7 +10,7 @@ users = db["users"]
 
 TOKEN_RATE = 100  # 100 coins = 1 token
 
-@Client.on_message(filters.command("convert"))
+@app.on_message(filters.command("convert"))
 async def convert_coins(client, message: Message):
     user_id = message.from_user.id
     args = message.text.split()
