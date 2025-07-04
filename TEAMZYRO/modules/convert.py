@@ -1,13 +1,13 @@
 from pyrogram import filters
-from TEAMZYRO import app  
+from TEAMZYRO import app
 from pymongo import MongoClient
 from pyrogram.types import Message
 
-# MongoDB Setup
+# MongoDB Setup (Your DB)
 MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"
 mongo = MongoClient(MONGO_URL)
-db = mongo["waifu_bot"]
-users = db["users"]
+db = mongo["waifu_bot"]         # You can rename if needed
+users = db["users"]             # Make sure this is your correct collection name
 
 TOKEN_RATE = 100  # 100 coins = 1 token
 
@@ -20,11 +20,11 @@ async def convert_coins(client, message: Message):
         return await message.reply("❌ Usage: `/convert 100`", quote=True)
 
     coins_to_convert = int(args[1])
-    user_data = users.find_one({"_id": user_id})
+    user_data = users.find_one({"user_id": user_id})
 
     if not user_data:
-        users.insert_one({"_id": user_id, "coins": 0, "tokens": 0})
-        user_data = users.find_one({"_id": user_id})
+        users.insert_one({"user_id": user_id, "coins": 0, "tokens": 0})
+        user_data = users.find_one({"user_id": user_id})
 
     current_coins = user_data.get("coins", 0)
     current_tokens = user_data.get("tokens", 0)
@@ -40,12 +40,12 @@ async def convert_coins(client, message: Message):
     new_tokens = current_tokens + tokens_earned
 
     users.update_one(
-        {"_id": user_id},
+        {"user_id": user_id},
         {"$set": {"coins": coins_after, "tokens": new_tokens}}
     )
 
     await message.reply(
-        f"✅ Successfully converted {coins_to_convert} coins into {tokens_earned} token(s).\n"
+        f"✅ Converted {coins_to_convert} coins into {tokens_earned} token(s).\n"
         f"🪙 Remaining Coins: {coins_after}\n🎟 Total Tokens: {new_tokens}",
         quote=True
     )
