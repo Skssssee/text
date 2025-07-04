@@ -26,8 +26,13 @@ async def convert_coins(client, message: Message):
         users.insert_one({"_id": user_id, "coins": 0, "tokens": 0})
         user_data = users.find_one({"_id": user_id})
 
-    current_coins = user_data.get("coins", 0)
-    current_tokens = user_data.get("tokens", 0)
+    current_coins = int(user_data.get("coins", 0))
+current_tokens = int(user_data.get("tokens", 0))
+
+await message.reply(
+    f"🧪 DEBUG:\ncoins in db = {current_coins}\nuser entered = {coins_to_convert}",
+    quote=True
+        )
 
     if coins_to_convert > current_coins:
         return await message.reply("❌ You don't have that many coins!", quote=True)
