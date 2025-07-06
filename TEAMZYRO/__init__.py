@@ -43,7 +43,7 @@ PHOTO_URL = [
     os.getenv("PHOTO_URL_2", "https://files.catbox.moe/7ccoub.jpg")
 ]
 
-STATS_IMG = ["https://files.catbox.moe/gknnju.jpg"]
+STATS_IMG = ["https://files.catbox.moe/zpbvfn.jpg"]
 
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/II_GOJO")
 UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/GOJO_SUPPORT_GROUP_II")
