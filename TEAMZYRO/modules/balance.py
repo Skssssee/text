@@ -14,7 +14,7 @@ async def balance(client: Client, message: Message):
     user_id = message.from_user.id
     user_balance, user_tokens = await get_balance(user_id)
     response = (
-        f"{message.from_user.first_name} \n◈⌠ {user_balance} coins⌡\n"
+        f"{html.escape(message.from_user.first_name)} \n◈⌠ {user_balance} coins⌡\n"
         f"◈ ⌠ {user_tokens} Tokens⌡"
     )
     await message.reply_text(response, reply_to_message_id=False)
@@ -37,25 +37,29 @@ async def pay(client: Client, message: Message):
         return
 
     recipient_id = None
-    recipient_username = None
+    recipient_name = None
 
     if message.reply_to_message:
         recipient_id = message.reply_to_message.from_user.id
-        recipient_username = message.reply_to_message.from_user.username
+        recipient_name = message.reply_to_message.from_user.first_name
     elif len(args) > 2:
         try:
             recipient_id = int(args[2])
         except ValueError:
-            recipient_username = args[2]
-            user_data = await user_collection.find_one({'username': recipient_username}, {'id': 1})
+            recipient_username = args[2].lstrip('@')  # Remove @ from username
+            user_data = await user_collection.find_one({'username': recipient_username}, {'id': 1, 'first_name': 1})
             if user_data:
                 recipient_id = user_data['id']
+                recipient_name = user_data.get('first_name', recipient_username)
+            else:
+                await message.reply_text("Recipient not found. Please check the username or reply to a user.")
+                return
 
     if not recipient_id:
         await message.reply_text("Recipient not found. Reply to a user or provide a valid user ID/username.")
         return
 
-    sender_balance, _, _, _ = await get_balance(sender_id)
+    sender_balance, _ = await get_balance(sender_id)
     if sender_balance < amount:
         await message.reply_text("Insufficient balance.")
         return
@@ -63,20 +67,23 @@ async def pay(client: Client, message: Message):
     await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
     await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
 
-    updated_sender_balance, _, _, _ = await get_balance(sender_id)
-    updated_recipient_balance, _, _, _ = await get_balance(recipient_id)
+    updated_sender_balance, _ = await get_balance(sender_id)
+    updated_recipient_balance, _ = await get_balance(recipient_id)
+
+    # Use first name or ID for recipient in the response
+    recipient_display = html.escape(recipient_name or str(recipient_id))
+    sender_display = html.escape(message.from_user.first_name or str(sender_id))
 
     await message.reply_text(
-        f"✅ You paid {amount} coins to @{html.escape(recipient_username or str(recipient_id))}."
-        f"\n💰 Your New Balance: {updated_sender_balance} coins"
+        f"✅ You paid {amount} coins to {recipient_display}.\n"
+        f"💰 Your New Balance: {updated_sender_balance} coins"
     )
 
     await client.send_message(
         chat_id=recipient_id,
-        text=f"🎉 You received {amount} coins from @{message.from_user.username}!"
-        f"\n💰 Your New Balance: {updated_recipient_balance} coins"
+        text=f"🎉 You received {amount} coins from {sender_display}!\n"
+        f"💰 Your New Balance: {updated_recipient_balance} coins"
     )
-
 
 @app.on_message(filters.command("kill"))
 @require_power("VIP")
