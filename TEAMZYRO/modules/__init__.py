@@ -1,15 +1,10 @@
 import logging
 import sys
 import time
-from pymongo import MongoClient
 
-# ✅ MongoDB Setup
-MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"
-mongo = MongoClient(MONGO_URL)
-db = mongo["waifu_bot"]
-users = db["users"]  # ✅ This will be imported in other files
+StartTime = time.time()
 
-# ✅ Logging setup
+# enable logging
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     handlers=[logging.FileHandler("log.txt"), logging.StreamHandler()],
@@ -17,10 +12,11 @@ logging.basicConfig(
 )
 
 logging.getLogger("apscheduler").setLevel(logging.ERROR)
+
 logging.getLogger("pyrate_limiter").setLevel(logging.ERROR)
 LOGGER = logging.getLogger(__name__)
 
-# ✅ Python version check
+# if version < 3.6, stop bot.
 if sys.version_info[0] < 3 or sys.version_info[1] < 6:
     LOGGER.error(
         "You MUST have a python version of at least 3.6! Multiple features depend on this. Bot quitting."
@@ -34,6 +30,7 @@ def __list_all_modules():
     import glob
     from os.path import basename, dirname, isfile
 
+    # This generates a list of modules in this folder for the * in __main__ to work.
     mod_paths = glob.glob(dirname(__file__) + "/*.py")
     all_modules = [
         basename(f)[:-3]
@@ -53,6 +50,7 @@ def __list_all_modules():
 
             all_modules = sorted(set(all_modules) - set(to_load))
             to_load = list(all_modules) + to_load
+
         else:
             to_load = all_modules
 
@@ -64,8 +62,7 @@ def __list_all_modules():
 
     return all_modules
 
+
 ALL_MODULES = __list_all_modules()
 LOGGER.info("Modules to load: %s", str(ALL_MODULES))
-
-# ✅ Exporting both modules and users
-__all__ = ALL_MODULES + ["ALL_MODULES", "users"]
+__all__ = ALL_MODULES + ["ALL_MODULES"]
