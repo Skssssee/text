@@ -76,7 +76,7 @@ async def stats_handler(client: Client, message: Message):
     
     # Build the stats caption
     stats_message = (
-        f"❖ 【ＺＹＲＯ】{stats['first_name']} ɪɴғᴏʀᴍᴀᴛɪᴏɴ ❖\n"
+        f"❖ {stats['first_name']} ɪɴғᴏʀᴍᴀᴛɪᴏɴ ❖\n"
         f"━━━━━━━━━━━━━━━━━━━━━\n"
         f"⬤ ᴜsᴇʀ ɪᴅ ➥ {stats['user_id']}\n"
         f"⬤ ᴍᴇɴᴛɪᴏɴ ➥ {stats['first_name']}\n"
