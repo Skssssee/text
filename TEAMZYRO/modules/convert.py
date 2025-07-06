@@ -2,7 +2,6 @@ from pyrogram import filters
 from TEAMZYRO import app
 from pymongo import MongoClient
 from pyrogram.types import Message
-from TEAMZYRO.modules.user import get_or_create_user
 
 # MongoDB Setup
 MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"
