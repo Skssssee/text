@@ -77,14 +77,14 @@ async def stats_handler(client: Client, message: Message):
     # Build the stats caption
     stats_message = (
         f"❖ {stats['first_name']} ɪɴғᴏʀᴍᴀᴛɪᴏɴ ❖\n"
-        f"━━━━━━━━━━━━━━━━━━━━━\n"
-        f"⬤ ᴜsᴇʀ ɪᴅ ➥ {stats['user_id']}\n"
-        f"⬤ ᴍᴇɴᴛɪᴏɴ ➥ {stats['first_name']}\n"
-        f"⬤ ᴄᴏɪɴ ➥ {stats['balance']}\n"
-        f"⬤ ᴄᴏʟʟᴇᴄᴛɪᴏɴ ➥ {stats['character_count']}/{stats['total_characters']} (total)\n"
-        f"⬤ ᴘʀᴏɢʀᴇss ʙᴀʀ ➥ [{stats['progress_bar']} {stats['progress_percentage']:.2f}%]\n"
-        f"⬤ ɢʟᴏʙᴀʟ ʀᴀɴᴋ ➥ {stats['rank']}/{stats['total_users']}\n"
-        f"⬤ ʀᴀʀɪᴛʏ ᴄᴏᴜɴᴛ ➥\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"⇒ ᴜsᴇʀ ɪᴅ ➥ {stats['user_id']}\n"
+        f"⇒ ᴍᴇɴᴛɪᴏɴ ➥ {stats['first_name']}\n"
+        f"⇒ ᴄᴏɪɴ ➥ {stats['balance']}\n"
+        f"⇒ ᴄᴏʟʟᴇᴄᴛɪᴏɴ ➥ {stats['character_count']}/{stats['total_characters']} (total)\n"
+        f"⇒ ᴘʀᴏɢʀᴇss ʙᴀʀ ➥ [{stats['progress_bar']} {stats['progress_percentage']:.2f}%]\n"
+        f"⇒ ɢʟᴏʙᴀʟ ʀᴀɴᴋ ➥ {stats['rank']}/{stats['total_users']}\n"
+        f"⇒ ʀᴀʀɪᴛʏ ᴄᴏᴜɴᴛ ➥\n"
     )
     
     # Add rarity counts
@@ -92,7 +92,7 @@ async def stats_handler(client: Client, message: Message):
         emoji = rarity_map2.get(rarity, '❍')
         stats_message += f"  ❍ {rarity} ➥ {count}\n"
     
-    stats_message += "━━━━━━━━━━━━━━━━━━━━━"
+    stats_message += "━━━━━━━━━━━━━━━━━━"
     
     # Edit the processing message with the final stats
     await processing_message.edit_caption(
