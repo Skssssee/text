@@ -36,7 +36,7 @@ mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu:waifu123@gojowaifu.r
 MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/+8KU5ZDxvZyw0N2U1")
 
 # Modified to support both image and video URLs
-START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/4uf7r9.jpg,https://files.catbox.moe/3saw6n.jpg,https://files.catbox.moe/f5njbm.jpg,https://telegra.ph/file/1a3c152717https://files.catbox.moe/4uf7r9.jpg,https://files.catbox.moe/3saw6n.jpg,https://files.catbox.moe/33nb6o.jpg,https://files.catbox.moe/zpbvfn.jpg,https://files.catbox.moe/tqn7cq.mp4,https://files.catbox.moe/t8rcw6.mp4").split(',')
+START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/3kd6oq.jpg,https://files.catbox.moe/nkg2ly.jpg,https://files.catbox.moe/0zvwpt.jpg,https://telegra.ph/file/1a3c152717https://files.catbox.moe/4uf7r9.jpg,https://files.catbox.moe/z7d8i6.jpg,https://files.catbox.moe/33nb6o.jpg,https://files.catbox.moe/zpbvfn.jpg,https://files.catbox.moe/tqn7cq.mp4,https://files.catbox.moe/t8rcw6.mp4").split(',')
 
 PHOTO_URL = [
     os.getenv("PHOTO_URL_1", "https://files.catbox.moe/f5njbm.jpg"),
