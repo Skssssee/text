@@ -25,7 +25,7 @@ rarity_map = {
     10: "🏖 Summer",
     11: "🎗 Royal",
     12: "💸 Luxury Edition",
-    13: "🌧️ Rainy Edition",
+    13: "🌧️ Rainy Edition"
 }
 """
 
