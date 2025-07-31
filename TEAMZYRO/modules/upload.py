@@ -124,7 +124,7 @@ async def ul(client, message):
             character = {
                 'name': character_name,
                 'anime': anime,
-                'rarity': rarity_text,
+                'rarity': rarity,
                 'id': available_id
             }
 
@@ -153,7 +153,7 @@ async def ul(client, message):
                         caption=(
                             f"Character Name: {character_name}\n"
                             f"Anime Name: {anime}\n"
-                            f"Rarity: {rarity_text}\n"
+                            f"Rarity: {rarity}\n"
                             f"ID: {available_id}\n"
                             f"Added by [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n"
                         ),
@@ -165,7 +165,7 @@ async def ul(client, message):
                         caption=(
                             f"Character Name: {character_name}\n"
                             f"Anime Name: {anime}\n"
-                            f"Rarity: {rarity_text}\n"
+                            f"Rarity: {rarity}\n"
                             f"ID: {available_id}\n"
                             f"Added by [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n\n"
                         ),
