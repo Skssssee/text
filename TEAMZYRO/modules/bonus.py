@@ -1,103 +1,70 @@
-import sqlite3
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputMediaPhoto
 from datetime import datetime, timedelta
+from TEAMZYRO import app, user_collection
 
-BOT_TOKEN = "8083603375:AAFp7qXvYq5WI4kE63IGLar6Zdv62BDAf-U"
+# --- Bonus settings ---
+DAILY_REWARD = 100
+WEEKLY_REWARD = 500
 
-# ========== DATABASE ==========
-conn = sqlite3.connect("users.db", check_same_thread=False)
-c = conn.cursor()
-c.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        user_id INTEGER PRIMARY KEY,
-        coins INTEGER DEFAULT 0,
-        daily TEXT,
-        weekly TEXT
-    )
-""")
-conn.commit()
+# --- Bonus Command Handler ---
+@app.on_message(filters.command("bonus"))
+async def bonus_menu(client, message):
+    user_id = message.from_user.id
 
-def get_user(user_id):
-    c.execute("SELECT * FROM users WHERE user_id=?", (user_id,))
-    user = c.fetchone()
-    if not user:
-        c.execute("INSERT INTO users (user_id, coins) VALUES (?, ?)", (user_id, 0))
-        conn.commit()
-        return (user_id, 0, None, None)
-    return user
-
-def update_user(user_id, coins=None, daily=None, weekly=None):
-    if coins is not None:
-        c.execute("UPDATE users SET coins=? WHERE user_id=?", (coins, user_id))
-    if daily is not None:
-        c.execute("UPDATE users SET daily=? WHERE user_id=?", (daily, user_id))
-    if weekly is not None:
-        c.execute("UPDATE users SET weekly=? WHERE user_id=?", (weekly, user_id))
-    conn.commit()
-
-# ========== BUTTONS ==========
-def get_bonus_buttons(user_id):
-    user = get_user(user_id)
-    now = datetime.now()
-
-    daily_text = "💰 Dᴀɪʟʏ Bᴏɴᴜs❣︎"
-    weekly_text = "💎 Wᴇᴇᴋʟʏ Bᴏɴᴜs❣︎"
-
-    if user[2] and datetime.fromisoformat(user[2]) > now:
-        daily_text = "✅ Claimed"
-    if user[3] and datetime.fromisoformat(user[3]) > now:
-        weekly_text = "✅ Claimed"
-
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(daily_text, callback_data="daily_bonus"),
-            InlineKeyboardButton(weekly_text, callback_data="weekly_bonus")
-        ],
-        [InlineKeyboardButton("🗑️ Cʟᴏsᴇ", callback_data="close_bonus")]
-    ])
-
-# ========== /bonus ==========
-async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "🎁 Cʟᴀɪᴍ ʏᴏᴜʀ ᴅᴀɪʟʏ ᴀɴᴅ ᴡᴇᴇᴋʟʏ ʙᴏɴᴜs ʙᴇʟᴏᴡ:",
-        reply_markup=get_bonus_buttons(update.message.from_user.id)
+    buttons = InlineKeyboardMarkup(
+        [[
+            InlineKeyboardButton("🎁 Daily Bonus", callback_data="daily_bonus"),
+            InlineKeyboardButton("📦 Weekly Bonus", callback_data="weekly_bonus"),
+            InlineKeyboardButton("❌ Close", callback_data="bonus_close")
+        ]]
     )
 
-async def handle_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    query = update.callback_query
-    user_id = query.from_user.id
-    user = get_user(user_id)
-    coins = user[1]
-    now = datetime.now()
+    media_group = [
+        InputMediaPhoto("https://telegra.ph/file/f632a47bc3c6abfa26d92.jpg", caption="🎉 Claim your bonuses below!"),
+        InputMediaPhoto("https://telegra.ph/file/fdbb8f61d1014c9f79b89.jpg")
+    ]
 
-    if query.data == "daily_bonus":
-        if user[2] and datetime.fromisoformat(user[2]) > now:
-            await query.answer("❌ Already claimed! Come back later.", show_alert=True)
+    await client.send_media_group(message.chat.id, media_group)
+    await message.reply_text("👇 Click a button below to claim your bonus:", reply_markup=buttons)
+
+# --- Callback Query Handler ---
+@app.on_callback_query(filters.regex("bonus"))
+async def handle_bonus(client, callback_query: CallbackQuery):
+    user_id = callback_query.from_user.id
+    now = datetime.utcnow()
+
+    user_data = user_collection.find_one({"user_id": user_id}) or {}
+
+    if callback_query.data == "daily_bonus":
+        last_claim = user_data.get("last_daily_bonus")
+        if not last_claim or now - last_claim >= timedelta(days=1):
+            user_collection.update_one(
+                {"user_id": user_id},
+                {
+                    "$inc": {"coins": DAILY_REWARD},
+                    "$set": {"last_daily_bonus": now}
+                },
+                upsert=True
+            )
+            await callback_query.answer(f"✅ You've received {DAILY_REWARD} coins!", show_alert=True)
         else:
-            coins += 100
-            update_user(user_id, coins=coins, daily=(now + timedelta(hours=24)).isoformat())
-            await query.answer(f"✨ 100 Coins Added!\nTotal: {coins} 💰", show_alert=True)
+            await callback_query.answer("❌ You’ve already claimed your daily bonus.", show_alert=True)
 
-        await query.edit_message_reply_markup(reply_markup=get_bonus_buttons(user_id))
-
-    elif query.data == "weekly_bonus":
-        if user[3] and datetime.fromisoformat(user[3]) > now:
-            await query.answer("❌ Already claimed! Try next week.", show_alert=True)
+    elif callback_query.data == "weekly_bonus":
+        last_claim = user_data.get("last_weekly_bonus")
+        if not last_claim or now - last_claim >= timedelta(weeks=1):
+            user_collection.update_one(
+                {"user_id": user_id},
+                {
+                    "$inc": {"coins": WEEKLY_REWARD},
+                    "$set": {"last_weekly_bonus": now}
+                },
+                upsert=True
+            )
+            await callback_query.answer(f"✅ You've received {WEEKLY_REWARD} coins!", show_alert=True)
         else:
-            coins += 1000
-            update_user(user_id, coins=coins, weekly=(now + timedelta(days=7)).isoformat())
-            await query.answer(f"💎 1000 Coins Added!\nTotal: {coins} 💰", show_alert=True)
+            await callback_query.answer("❌ You’ve already claimed your weekly bonus.", show_alert=True)
 
-        await query.edit_message_reply_markup(reply_markup=get_bonus_buttons(user_id))
-
-    elif query.data == "close_bonus":
-        await query.delete_message()
-
-# ========== BOT RUN ==========
-app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("bonus", bonus))
-app.add_handler(CallbackQueryHandler(handle_bonus))
-
-print("🔥 Bonus bot is running...")
-app.run_polling()
+    elif callback_query.data == "bonus_close":
+        await callback_query.message.delete()
