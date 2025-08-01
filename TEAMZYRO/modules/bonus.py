@@ -55,7 +55,7 @@ def get_bonus_buttons(user_id):
 
 # ================= /start =================
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("💬 Cᴏɴᴛᴀᴄᴛ ᴍʏ ʟᴏʀᴅ", url="https://t.me/Izuku_Here")]]
+    keyboard = [[InlineKeyboardButton("💬 Cᴏɴᴛᴀᴄᴛ ᴍʏ ʟᴏʀᴅ", url="https://t.me/II_YOUR_GOJO_ll")]]
     text = "⚡ Hey My Lord, I am active!\n\n🤖 *Always ready to serve you!*"
 
     await update.message.reply_photo(
