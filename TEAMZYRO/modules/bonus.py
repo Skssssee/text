@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ApplicationBuilder, CommandHandler, CallbackQueryHandler, ContextTypes
 from datetime import datetime, timedelta
 
-BOT_TOKEN = "Token daal nalle"
+BOT_TOKEN = "8083603375:AAFp7qXvYq5WI4kE63IGLar6Zdv62BDAf-U"
 
 # ================= DATABASE =================
 conn = sqlite3.connect("users.db", check_same_thread=False)
