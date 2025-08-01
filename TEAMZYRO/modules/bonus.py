@@ -5,15 +5,17 @@ from datetime import datetime, timedelta
 
 BOT_TOKEN = "8083603375:AAFp7qXvYq5WI4kE63IGLar6Zdv62BDAf-U"
 
-# ================= DATABASE =================
+# ========== DATABASE ==========
 conn = sqlite3.connect("users.db", check_same_thread=False)
 c = conn.cursor()
-c.execute("""CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER PRIMARY KEY,
-    coins INTEGER DEFAULT 0,
-    daily TEXT,
-    weekly TEXT
-)""")
+c.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        user_id INTEGER PRIMARY KEY,
+        coins INTEGER DEFAULT 0,
+        daily TEXT,
+        weekly TEXT
+    )
+""")
 conn.commit()
 
 def get_user(user_id):
@@ -34,7 +36,7 @@ def update_user(user_id, coins=None, daily=None, weekly=None):
         c.execute("UPDATE users SET weekly=? WHERE user_id=?", (weekly, user_id))
     conn.commit()
 
-# ================= BUTTONS =================
+# ========== BUTTONS ==========
 def get_bonus_buttons(user_id):
     user = get_user(user_id)
     now = datetime.now()
@@ -48,12 +50,14 @@ def get_bonus_buttons(user_id):
         weekly_text = "✅ Claimed"
 
     return InlineKeyboardMarkup([
-        [InlineKeyboardButton(daily_text, callback_data="daily_bonus")],
-        [InlineKeyboardButton(weekly_text, callback_data="weekly_bonus")],
+        [
+            InlineKeyboardButton(daily_text, callback_data="daily_bonus"),
+            InlineKeyboardButton(weekly_text, callback_data="weekly_bonus")
+        ],
         [InlineKeyboardButton("🗑️ Cʟᴏsᴇ", callback_data="close_bonus")]
     ])
 
-# ================= /bonus =================
+# ========== /bonus ==========
 async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
         "🎁 Cʟᴀɪᴍ ʏᴏᴜʀ ᴅᴀɪʟʏ ᴀɴᴅ ᴡᴇᴇᴋʟʏ ʙᴏɴᴜs ʙᴇʟᴏᴡ:",
@@ -90,18 +94,10 @@ async def handle_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif query.data == "close_bonus":
         await query.delete_message()
 
-# ================= /coins =================
-async def coins(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user = get_user(update.message.from_user.id)
-    total = user[1]
-    await update.message.reply_text(f"💰 Your Total Coins: {total}", parse_mode="Markdown")
-    
-# ================= BOT RUN =================
+# ========== BOT RUN ==========
 app = ApplicationBuilder().token(BOT_TOKEN).build()
-app.add_handler(CommandHandler("start", start))
 app.add_handler(CommandHandler("bonus", bonus))
-app.add_handler(CommandHandler("coins", coins))
 app.add_handler(CallbackQueryHandler(handle_bonus))
 
-print("🔥 Bot is Running with Permanent Data...")
-app.run_polling()
+print("🔥 Bonus bot is running...")
+app.run_polling()app.run_polling()
