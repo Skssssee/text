@@ -2,61 +2,50 @@ import asyncio
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from datetime import datetime, timedelta
-from TEAMZYRO import ZYRO as bot
+from TEAMZYRO import ZYRO as app
 from TEAMZYRO import user_collection
 
-DAILY_REWARD = 100
-WEEKLY_REWARD = 500
-
-def get_user_data(user_id: int):
+def get_user(user_id):
     return user_collection.find_one({"user_id": user_id}) or {}
 
-def update_bonus_time(user_id: int, bonus_type: str):
+def update_user(user_id, update):
+    user_collection.update_one({"user_id": user_id}, {"$set": update}, upsert=True)
+
+@app.on_message(filters.command("bonus"))
+async def bonus_menu(_, message: Message):
+    btn = [
+        [
+            InlineKeyboardButton("💰 Daily Bonus", callback_data="daily_bonus"),
+            InlineKeyboardButton("💎 Weekly Bonus", callback_data="weekly_bonus")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="close_bonus")]
+    ]
+    await message.reply("Choose your bonus:", reply_markup=InlineKeyboardMarkup(btn))
+
+@app.on_callback_query(filters.regex("^(daily_bonus|weekly_bonus|close_bonus)$"))
+async def handle_bonus(c: app, cq: CallbackQuery):
+    user_id = cq.from_user.id
+    data = cq.data
+    user = get_user(user_id)
     now = datetime.utcnow()
-    user_collection.update_one(
-        {"user_id": user_id},
-        {"$set": {f"last_{bonus_type}": now}},
-        upsert=True
-    )
 
-def can_claim_bonus(user_id: int, bonus_type: str, cooldown_hours: int):
-    user = get_user_data(user_id)
-    last_time = user.get(f"last_{bonus_type}")
-    if not last_time:
-        return True
-    elapsed = (datetime.utcnow() - last_time).total_seconds() / 3600
-    return elapsed >= cooldown_hours
-
-@bot.on_message(filters.command("bonus"))
-async def bonus_command(_, message: Message):
-    btns = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🌞 Daily Bonus", callback_data="daily_bonus")],
-        [InlineKeyboardButton("📅 Weekly Bonus", callback_data="weekly_bonus")],
-        [InlineKeyboardButton("❌ Close", callback_data="bonus_close")]
-    ])
-    await message.reply("🎁 Choose your bonus:", reply_markup=btns)
-
-@bot.on_callback_query(filters.regex("^(daily_bonus|weekly_bonus|bonus_close)$"))
-async def bonus_callback(_, query: CallbackQuery):
-    user_id = query.from_user.id
-    data = query.data
-
-    if data == "bonus_close":
-        await query.message.delete()
-        return
+    if data == "close_bonus":
+        return await cq.message.delete()
 
     if data == "daily_bonus":
-        bonus_type = "daily"
-        reward = DAILY_REWARD
-        cooldown = 24
-    else:
-        bonus_type = "weekly"
-        reward = WEEKLY_REWARD
-        cooldown = 24 * 7
+        last_claim = user.get("daily_claim")
+        if last_claim and now < last_claim + timedelta(hours=24):
+            remain = (last_claim + timedelta(hours=24)) - now
+            return await cq.answer(f"Come back in {remain.seconds // 3600}h {remain.seconds // 60 % 60}m", show_alert=True)
+        coins = user.get("coins", 0) + 100
+        update_user(user_id, {"coins": coins, "daily_claim": now})
+        return await cq.answer("✅ You got 100 coins today!", show_alert=True)
 
-    if can_claim_bonus(user_id, bonus_type, cooldown):
-        update_bonus_time(user_id, bonus_type)
-        await query.answer(f"✅ You received {reward} waifu coins!", show_alert=True)
-        # Optionally update user's coins if you're using coin system
-    else:
-        await query.answer("⛔ Already claimed! Try again later.", show_alert=True)
+    if data == "weekly_bonus":
+        last_claim = user.get("weekly_claim")
+        if last_claim and now < last_claim + timedelta(days=7):
+            remain = (last_claim + timedelta(days=7)) - now
+            return await cq.answer(f"Come back in {remain.days}d {remain.seconds // 3600}h", show_alert=True)
+        coins = user.get("coins", 0) + 500
+        update_user(user_id, {"coins": coins, "weekly_claim": now})
+        return await cq.answer("✅ You got 500 coins this week!", show_alert=True)
