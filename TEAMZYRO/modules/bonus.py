@@ -53,18 +53,6 @@ def get_bonus_buttons(user_id):
         [InlineKeyboardButton("🗑️ Cʟᴏsᴇ", callback_data="close_bonus")]
     ])
 
-# ================= /start =================
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    keyboard = [[InlineKeyboardButton("💬 Cᴏɴᴛᴀᴄᴛ ᴍʏ ʟᴏʀᴅ", url="https://t.me/II_YOUR_GOJO_ll")]]
-    text = "⚡ Hey My Lord, I am active!\n\n🤖 *Always ready to serve you!*"
-
-    await update.message.reply_photo(
-        photo="https://files.catbox.moe/iavmgv.jpg",  # Apna image link
-        caption=text,
-        parse_mode="Markdown",
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
-
 # ================= /bonus =================
 async def bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
