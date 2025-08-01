@@ -1,62 +1,65 @@
 import asyncio
-from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from datetime import datetime, timedelta
-from TEAMZYRO import ZYRO as bot
-from TEAMZYRO import user_collection
+from pyrogram import filters
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from TEAMZYRO import ZYRO as bot, user_collection
 
+# Coin values
 DAILY_REWARD = 100
 WEEKLY_REWARD = 500
 
-def get_user_data(user_id: int):
-    return user_collection.find_one({"user_id": user_id}) or {}
+def get_keyboard():
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("💸 Daily Bonus", callback_data="daily_bonus"),
+            InlineKeyboardButton("🎁 Weekly Bonus", callback_data="weekly_bonus"),
+            InlineKeyboardButton("❌ Close", callback_data="bonus_close")
+        ]
+    ])
 
-def update_bonus_time(user_id: int, bonus_type: str):
-    now = datetime.utcnow()
-    user_collection.update_one(
-        {"user_id": user_id},
-        {"$set": {f"last_{bonus_type}": now}},
-        upsert=True
+@bot.on_message(filters.command("bonus") & filters.private)
+async def show_bonus_buttons(client, message):
+    await message.reply_text(
+        "🎁 Choose your bonus:",
+        reply_markup=get_keyboard()
     )
 
-def can_claim_bonus(user_id: int, bonus_type: str, cooldown_hours: int):
-    user = get_user_data(user_id)
-    last_time = user.get(f"last_{bonus_type}")
-    if not last_time:
-        return True
-    elapsed = (datetime.utcnow() - last_time).total_seconds() / 3600
-    return elapsed >= cooldown_hours
-
-@bot.on_message(filters.command("bonus"))
-async def bonus_command(_, message: Message):
-    btns = InlineKeyboardMarkup([
-        [InlineKeyboardButton("🌞 Daily Bonus", callback_data="daily_bonus")],
-        [InlineKeyboardButton("📅 Weekly Bonus", callback_data="weekly_bonus")],
-        [InlineKeyboardButton("❌ Close", callback_data="bonus_close")]
-    ])
-    await message.reply("🎁 Choose your bonus:", reply_markup=btns)
-
 @bot.on_callback_query(filters.regex("^(daily_bonus|weekly_bonus|bonus_close)$"))
-async def bonus_callback(_, query: CallbackQuery):
+async def handle_bonus(client, query: CallbackQuery):
     user_id = query.from_user.id
-    data = query.data
+    user = user_collection.find_one({"user_id": user_id}) or {}
 
-    if data == "bonus_close":
+    now = datetime.utcnow()
+    action = query.data
+
+    if action == "bonus_close":
         await query.message.delete()
         return
 
-    if data == "daily_bonus":
-        bonus_type = "daily"
+    if action == "daily_bonus":
+        last_claim = user.get("last_daily", now - timedelta(days=1, seconds=1))
+        cooldown = timedelta(days=1)
         reward = DAILY_REWARD
-        cooldown = 24
-    else:
-        bonus_type = "weekly"
-        reward = WEEKLY_REWARD
-        cooldown = 24 * 7
+        field = "last_daily"
 
-    if can_claim_bonus(user_id, bonus_type, cooldown):
-        update_bonus_time(user_id, bonus_type)
-        await query.answer(f"✅ You received {reward} waifu coins!", show_alert=True)
-        # Optionally update user's coins if you're using coin system
+    elif action == "weekly_bonus":
+        last_claim = user.get("last_weekly", now - timedelta(days=7, seconds=1))
+        cooldown = timedelta(days=7)
+        reward = WEEKLY_REWARD
+        field = "last_weekly"
+
+    if now - last_claim >= cooldown:
+        user_collection.update_one(
+            {"user_id": user_id},
+            {
+                "$set": {field: now},
+                "$inc": {"coins": reward}
+            },
+            upsert=True
+        )
+        await query.answer(f"✅ You received {reward} coins!", show_alert=True)
     else:
-        await query.answer("⛔ Already claimed! Try again later.", show_alert=True)
+        remaining = cooldown - (now - last_claim)
+        await query.answer(
+            f"⏳ You can claim again in {str(remaining).split('.')[0]}", show_alert=True
+        )
