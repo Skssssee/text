@@ -5,47 +5,52 @@ from datetime import datetime, timedelta
 from TEAMZYRO import ZYRO as bot
 from TEAMZYRO import user_collection
 
-def get_user(user_id):
-    return user_collection.find_one({"user_id": user_id}) or {}
+BONUS_AMOUNT = {
+    "daily": 100,
+    "weekly": 500
+}
 
-def update_user(user_id, update):
-    user_collection.update_one({"user_id": user_id}, {"$set": update}, upsert=True)
-
-@app.on_message(filters.command("bonus"))
-async def bonus_menu(_, message: Message):
-    btn = [
-        [
-            InlineKeyboardButton("💰 Daily Bonus", callback_data="daily_bonus"),
-            InlineKeyboardButton("💎 Weekly Bonus", callback_data="weekly_bonus")
-        ],
-        [InlineKeyboardButton("❌ Close", callback_data="close_bonus")]
-    ]
-    await message.reply("Choose your bonus:", reply_markup=InlineKeyboardMarkup(btn))
-
-@app.on_callback_query(filters.regex("^(daily_bonus|weekly_bonus|close_bonus)$"))
-async def handle_bonus(c: app, cq: CallbackQuery):
-    user_id = cq.from_user.id
-    data = cq.data
-    user = get_user(user_id)
+async def check_and_update(user_id, bonus_type):
+    field = f"{bonus_type}_bonus_time"
+    user = user_collection.find_one({"user_id": user_id}) or {}
     now = datetime.utcnow()
 
-    if data == "close_bonus":
-        return await cq.message.delete()
+    if field in user:
+        last_claim = user[field]
+        cooldown = timedelta(days=1 if bonus_type == "daily" else 7)
+        if now - last_claim < cooldown:
+            remaining = cooldown - (now - last_claim)
+            return False, f"You already claimed {bonus_type} bonus.\nCome back after: {remaining}"
 
-    if data == "daily_bonus":
-        last_claim = user.get("daily_claim")
-        if last_claim and now < last_claim + timedelta(hours=24):
-            remain = (last_claim + timedelta(hours=24)) - now
-            return await cq.answer(f"Come back in {remain.seconds // 3600}h {remain.seconds // 60 % 60}m", show_alert=True)
-        coins = user.get("coins", 0) + 100
-        update_user(user_id, {"coins": coins, "daily_claim": now})
-        return await cq.answer("✅ You got 100 coins today!", show_alert=True)
+    user_collection.update_one(
+        {"user_id": user_id},
+        {
+            "$set": {field: now},
+            "$inc": {"coins": BONUS_AMOUNT[bonus_type]}
+        },
+        upsert=True
+    )
+    return True, f"🎉 You received {BONUS_AMOUNT[bonus_type]} coins as {bonus_type} bonus!"
 
-    if data == "weekly_bonus":
-        last_claim = user.get("weekly_claim")
-        if last_claim and now < last_claim + timedelta(days=7):
-            remain = (last_claim + timedelta(days=7)) - now
-            return await cq.answer(f"Come back in {remain.days}d {remain.seconds // 3600}h", show_alert=True)
-        coins = user.get("coins", 0) + 500
-        update_user(user_id, {"coins": coins, "weekly_claim": now})
-        return await cq.answer("✅ You got 500 coins this week!", show_alert=True)
+@bot.on_message(filters.command("bonus"))
+async def show_bonus_buttons(bot, message: Message):
+    btn = InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton("🎁 Daily Bonus", callback_data="claim_daily"),
+            InlineKeyboardButton("💰 Weekly Bonus", callback_data="claim_weekly")
+        ],
+        [InlineKeyboardButton("❌ Close", callback_data="bonus_close")]
+    ])
+    await message.reply("🎉 Choose your bonus below:", reply_markup=btn)
+
+@bot.on_callback_query(filters.regex(r"claim_(daily|weekly)"))
+async def claim_bonus(bot, query: CallbackQuery):
+    bonus_type = query.data.split("_")[1]
+    user_id = query.from_user.id
+
+    success, msg = await check_and_update(user_id, bonus_type)
+    await query.answer(msg, show_alert=True)
+
+@bot.on_callback_query(filters.regex("bonus_close"))
+async def close_bonus(bot, query: CallbackQuery):
+    await query.message.delete()
