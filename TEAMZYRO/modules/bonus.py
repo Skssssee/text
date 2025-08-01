@@ -1,56 +1,75 @@
 import asyncio
 from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
+from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from datetime import datetime, timedelta
 from TEAMZYRO import ZYRO as bot
 from TEAMZYRO import user_collection
 
-BONUS_AMOUNT = {
-    "daily": 100,
-    "weekly": 500
-}
-
-async def check_and_update(user_id, bonus_type):
-    field = f"{bonus_type}_bonus_time"
-    user = user_collection.find_one({"user_id": user_id}) or {}
+# Helper function to format datetime
+def get_time_key(period):
     now = datetime.utcnow()
+    if period == "daily":
+        return now.strftime("daily-%Y-%m-%d")
+    elif period == "weekly":
+        # ISO week: e.g., "2025-W31"
+        return now.strftime("weekly-%G-W%V")
 
-    if field in user:
-        last_claim = user[field]
-        cooldown = timedelta(days=1 if bonus_type == "daily" else 7)
-        if now - last_claim < cooldown:
-            remaining = cooldown - (now - last_claim)
-            return False, f"You already claimed {bonus_type} bonus.\nCome back after: {remaining}"
+# Create bonus buttons
+def bonus_markup():
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("🎁 Daily Bonus", callback_data="claim_daily"),
+                InlineKeyboardButton("🗓 Weekly Bonus", callback_data="claim_weekly")
+            ],
+            [InlineKeyboardButton("❌ Close", callback_data="bonus_close")]
+        ]
+    )
 
+# /bonus command
+@bot.on_message(filters.command("bonus"))
+async def bonus_cmd(_, message: Message):
+    await message.reply(
+        "**🎁 Claim your bonus:**",
+        reply_markup=bonus_markup()
+    )
+
+# Claim button handler
+@bot.on_callback_query(filters.regex("claim_"))
+async def claim_bonus(_, query: CallbackQuery):
+    user_id = query.from_user.id
+    data = query.data  # 'claim_daily' or 'claim_weekly'
+
+    period = "daily" if "daily" in data else "weekly"
+    reward = 100 if period == "daily" else 500
+    time_key = get_time_key(period)
+
+    # Check user's last claimed time
+    user = user_collection.find_one({"user_id": user_id}) or {}
+    last_claims = user.get("bonus_claims", {})
+    
+    if last_claims.get(time_key):
+        await query.answer(f"You already claimed your {period} bonus 🎁", show_alert=True)
+        return
+
+    # Update user's coin and claim time
     user_collection.update_one(
         {"user_id": user_id},
         {
-            "$set": {field: now},
-            "$inc": {"coins": BONUS_AMOUNT[bonus_type]}
+            "$inc": {"coins": reward},
+            "$set": {f"bonus_claims.{time_key}": True}
         },
         upsert=True
     )
-    return True, f"🎉 You received {BONUS_AMOUNT[bonus_type]} coins as {bonus_type} bonus!"
 
-@bot.on_message(filters.command("bonus"))
-async def show_bonus_buttons(bot, message: Message):
-    btn = InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton("🎁 Daily Bonus", callback_data="claim_daily"),
-            InlineKeyboardButton("💰 Weekly Bonus", callback_data="claim_weekly")
-        ],
-        [InlineKeyboardButton("❌ Close", callback_data="bonus_close")]
-    ])
-    await message.reply("🎉 Choose your bonus below:", reply_markup=btn)
+    await query.answer()
+    await query.edit_message_text(
+        f"✅ **{period.capitalize()} bonus claimed!**\n\nYou received `{reward}` coins 🎉",
+        reply_markup=None
+    )
 
-@bot.on_callback_query(filters.regex(r"claim_(daily|weekly)"))
-async def claim_bonus(bot, query: CallbackQuery):
-    bonus_type = query.data.split("_")[1]
-    user_id = query.from_user.id
-
-    success, msg = await check_and_update(user_id, bonus_type)
-    await query.answer(msg, show_alert=True)
-
+# Close button
 @bot.on_callback_query(filters.regex("bonus_close"))
-async def close_bonus(bot, query: CallbackQuery):
+async def close_bonus(_, query: CallbackQuery):
     await query.message.delete()
+    await query.answer()
