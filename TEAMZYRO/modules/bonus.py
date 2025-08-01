@@ -100,4 +100,4 @@ app.add_handler(CommandHandler("bonus", bonus))
 app.add_handler(CallbackQueryHandler(handle_bonus))
 
 print("🔥 Bonus bot is running...")
-app.run_polling()app.run_polling()
+app.run_polling()
