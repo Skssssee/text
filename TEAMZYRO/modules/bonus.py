@@ -2,7 +2,7 @@ import asyncio
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from datetime import datetime, timedelta
-from TEAMZYRO import ZYRO as app
+from TEAMZYRO import ZYRO as bot
 from TEAMZYRO import user_collection
 
 def get_user(user_id):
