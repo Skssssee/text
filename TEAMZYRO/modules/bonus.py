@@ -101,12 +101,13 @@ async def handle_bonus(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif query.data == "close_bonus":
         await query.delete_message()
-        # ================= /coins =================
+
+# ================= /coins =================
 async def coins(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = get_user(update.message.from_user.id)
     total = user[1]
     await update.message.reply_text(f"💰 Your Total Coins: {total}", parse_mode="Markdown")
-
+    
 # ================= BOT RUN =================
 app = ApplicationBuilder().token(BOT_TOKEN).build()
 app.add_handler(CommandHandler("start", start))
