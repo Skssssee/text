@@ -93,13 +93,12 @@ async def bonus_callback(_, query: CallbackQuery):
             f"⏳ Next Claim: {next_time_str}"
         )
     else:
-        next_time = get_next_claim_time(user_id, bonus_type, cooldown)
-        if next_time:
-            remaining = next_time - datetime.utcnow()
-            h, rem = divmod(int(remaining.total_seconds()), 3600)
-            m = rem // 60
-            await query.message.edit_text(
-                f"⛔ {bonus_type.title()} Bonus Already Claimed!\n\n"
-                f"⏳ Next Claim in: {h}h {m}m"
-                  )                f"⏳ Next Claim in: {hours}h {minutes}m"
-            )
+    next_time = get_next_claim_time(user_id, bonus_type, cooldown)
+    if next_time:
+        remaining = next_time - datetime.utcnow()
+        h, rem = divmod(int(remaining.total_seconds()), 3600)
+        m = rem // 60
+        await query.message.edit_text(
+            f"⛔ {bonus_type.title()} Bonus Already Claimed!\n\n"
+            f"⏳ Next Claim in: {h}h {m}m"
+    )
