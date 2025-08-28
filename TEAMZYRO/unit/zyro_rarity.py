@@ -48,7 +48,7 @@ rarity_map2 = {
     "🎗 Royal": "🎗",
     "💸 Luxury Edition": "💸",
     "🍃 echhi": "🍃",
-    "🌧️ Rainy Edition": "🌧️"
+    "🌧️ Rainy Edition": "🌧️",
     "🎍 Festival": "🎍"
 }
 
