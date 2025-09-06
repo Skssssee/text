@@ -51,16 +51,14 @@ async def send_market_character(user_id, message_or_callback, index: int):
     characters = state["characters"]
     character = characters[index]
 
-    # **Use uploaded rarity_number and price exactly**
-    rarity_number = character.get("rarity_number")
-    price = character.get("price")
-
-    # Safety check
-    if rarity_number is None or price is None:
+    # Check if essential data exists
+    if not all(k in character for k in ("rarity_number", "price", "img_url", "name", "anime")):
         return await (message_or_callback.reply if hasattr(message_or_callback, "id") else message_or_callback.message.edit_text)(
             "⚠ This waifu is misconfigured! Admin please fix."
         )
 
+    rarity_number = character["rarity_number"]
+    price = character["price"]
     rarity_emoji = rarity_map.get(rarity_number, "⚪️ Low")
 
     caption_message = (
@@ -80,15 +78,15 @@ async def send_market_character(user_id, message_or_callback, index: int):
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    if hasattr(message_or_callback, "id"):  # message
+    if hasattr(message_or_callback, "id"):  # it's a message
         await message_or_callback.reply_photo(
-            photo=character["img_url"],
+            photo=f"telegram://file_id/{character['img_url']}",
             caption=caption_message,
             reply_markup=reply_markup
         )
-    else:  # callback
+    else:  # it's a callback
         await message_or_callback.message.edit_media(
-            media=InputMediaPhoto(media=character['img_url'], caption=caption_message),
+            media=InputMediaPhoto(media=f"telegram://file_id/{character['img_url']}", caption=caption_message),
             reply_markup=reply_markup
         )
 
@@ -113,13 +111,12 @@ async def buy_market_character(client, cq):
     if not user:
         return await cq.answer("🚫 You need to register first!", show_alert=True)
 
-    price = character.get("price")
+    price = character["price"]
     balance = user.get("balance", 0)
 
     if balance < price:
         return await cq.answer(f"💰 You need {price - balance} more coins to buy this waifu!", show_alert=True)
 
-    # Deduct balance and add waifu
     new_balance = balance - price
     character_data = {
         "_id": ObjectId(),
@@ -185,9 +182,10 @@ async def add_to_market(client, message):
         "anime": anime,
         "rarity_number": rarity_number,
         "price": price,
-        "img_url": file_id
+        "img_url": file_id,
+        "id": str(ObjectId())
     }
 
     await market_collection.insert_one(waifu_data)
-    await message.reply(f"🎉 {name} added to the Market! Rarity: {rarity_map.get(rarity_number)} | Price: {price} coins")
+    await message.reply(f"🎉 {name} added to the Market!\nRarity: {rarity_map.get(rarity_number)} | Price: {price} coins")
     
