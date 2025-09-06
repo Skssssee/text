@@ -44,16 +44,29 @@ def hp_bar(hp):
     empty = segments - filled
     return "▰" * filled + "▱" * empty
 
+# --- Ensure user exists in DB ---
+async def ensure_user(user_id, first_name):
+    user = await user_collection.find_one({"user_id": user_id})
+    if not user:
+        await user_collection.insert_one({
+            "user_id": user_id,
+            "first_name": first_name,
+            "balance": 1000,
+            "wins": 0,
+            "losses": 0
+        })
+
 # --- Battle Command ---
 @bot.on_message(filters.command("battle"))
 async def battle_cmd(client, message):
     args = message.text.split()
     user_id = message.from_user.id
+    user_name = message.from_user.first_name
 
     # --- Usage check ---
     if len(args) != 3 or not args[2].isdigit():
         return await message.reply(
-            "⚔️ 𝗨𝗦𝗔𝗚𝗘:\n`/battle [username] <amount>`\n\n✨ 𝗘𝘅𝗮𝗺𝗽𝗹𝗲:\n`/battle [username] 500`",
+            "⚔️ 𝗨𝗦𝗔𝗚𝗘:\n`/battle [username] [amount]",
             quote=True
         )
 
@@ -61,39 +74,46 @@ async def battle_cmd(client, message):
     bet_amount = int(args[2])
 
     if bet_amount <= 0:
-        return await message.reply("❌ 𝗕𝗲𝘁 𝗮𝗺𝗼𝘂𝗻𝘁 𝗺𝘂𝘀𝘁 𝗯𝗲 𝗽𝗼𝘀𝗶𝘁𝗶𝘃𝗲!", quote=True)
+        return await message.reply("❌ 𝗕𝗲𝘁 𝗺𝘂𝘀𝘁 𝗯𝗲 𝗮 𝗽𝗼𝘀𝗶𝘁𝗶𝘃𝗲 𝗶𝗻𝘁𝗲𝗴𝗲𝗿!", quote=True)
 
-    # --- Opponent check ---
-    if not message.entities or len(message.entities) < 2:
-        return await message.reply("❌ 𝗠𝘂𝘀𝘁 𝗺𝗲𝗻𝘁𝗶𝗼𝗻 𝗮 𝗼𝗽𝗽𝗼𝗻𝗲𝗻𝘁!", quote=True)
+    # --- Resolve opponent ---
+    try:
+        opponent = await client.get_users(opponent_username)
+    except Exception:
+        return await message.reply("❌ Couldn't find opponent. Try replying to their message or using correct username.", quote=True)
 
-    opponent_id = message.entities[1].user.id if message.entities[1].user else None
+    opponent_id = opponent.id
+    opponent_name = opponent.first_name
+
     if opponent_id == user_id:
-        return await message.reply("😂 𝗬𝗼𝘂 𝗰𝗮𝗻'𝘁 𝗯𝗮𝘁𝘁𝗹𝗲 𝘆𝗼𝘂𝗿𝘀𝗲𝗹𝗳!", quote=True)
+        return await message.reply("😂 You can't battle yourself!", quote=True)
+
+    # --- Ensure DB entry exists ---
+    await ensure_user(user_id, user_name)
+    await ensure_user(opponent_id, opponent_name)
+
+    # --- Fetch real balances ---
+    user_data = await user_collection.find_one({"user_id": user_id})
+    opponent_data = await user_collection.find_one({"user_id": opponent_id})
+
+    user_balance = user_data.get("balance", 0)
+    opponent_balance = opponent_data.get("balance", 0)
+
+    if user_balance < bet_amount:
+        return await message.reply("❌ You don't have enough balance!", quote=True)
+    if opponent_balance < bet_amount:
+        return await message.reply(f"❌ {opponent_name} doesn't have enough balance!", quote=True)
 
     # --- Prevent multiple battles ---
     if user_id in active_battles or opponent_id in active_battles:
-        return await message.reply("⛔ Either you or opponent already in a battle!", quote=True)
+        return await message.reply("⛔ Either you or opponent is already in a battle!", quote=True)
 
     active_battles[user_id] = True
     active_battles[opponent_id] = True
 
-    # --- Ensure balances ---
-    user = await user_collection.find_one({"user_id": user_id}) or {"user_id": user_id, "balance": 1000}
-    opponent = await user_collection.find_one({"user_id": opponent_id}) or {"user_id": opponent_id, "balance": 1000}
-
-    if user["balance"] < bet_amount:
-        active_battles.pop(user_id, None)
-        active_battles.pop(opponent_id, None)
-        return await message.reply("❌ You don't have enough balance!", quote=True)
-    if opponent["balance"] < bet_amount:
-        active_battles.pop(user_id, None)
-        active_battles.pop(opponent_id, None)
-        return await message.reply("❌ Opponent doesn't have enough balance!", quote=True)
-
-    # Deduct bets temporarily
-    await user_collection.update_one({"user_id": user_id}, {"$inc": {"balance": -bet_amount}}, upsert=True)
-    await user_collection.update_one({"user_id": opponent_id}, {"$inc": {"balance": -bet_amount}}, upsert=True)
+    # --- Deduct bets temporarily ---
+    await user_collection.update_one({"user_id": user_id}, {"$inc": {"balance": -bet_amount}})
+    await user_collection.update_one({"user_id": opponent_id}, {"$inc": {"balance": -bet_amount}})
 
     # --- Battle Animation ---
     hp_user = 100
@@ -102,12 +122,12 @@ async def battle_cmd(client, message):
 
     battle_msg = await message.reply_photo(
         photo=random.choice(BATTLE_IMAGES),
-        caption=f"⚔️ **BATTLE START** ⚔️\n\n{message.from_user.first_name} vs {opponent_username}\nHP: {hp_user} / {hp_opponent}",
+        caption=f"⚔️ **BATTLE START** ⚔️\n\n{user_name} vs {opponent_name}\nHP: {hp_user} / {hp_opponent}",
         parse_mode="markdown"
     )
 
     while hp_user > 0 and hp_opponent > 0:
-        await asyncio.sleep(1)  # delay for animation effect
+        await asyncio.sleep(1)
         turn += 1
 
         attacker_is_user = random.choice([True, False])
@@ -119,16 +139,16 @@ async def battle_cmd(client, message):
         if attacker_is_user:
             hp_opponent -= damage
             if hp_opponent < 0: hp_opponent = 0
-            attack_text = f"{move_name} — {message.from_user.first_name} dealt {damage} {'(CRIT!)' if is_crit else ''}"
+            attack_text = f"{move_name} — {user_name} dealt {damage} {'(CRIT!)' if is_crit else ''}"
         else:
             hp_user -= damage
             if hp_user < 0: hp_user = 0
-            attack_text = f"{move_name} — {opponent_username} dealt {damage} {'(CRIT!)' if is_crit else ''}"
+            attack_text = f"{move_name} — {opponent_name} dealt {damage} {'(CRIT!)' if is_crit else ''}"
 
         await battle_msg.edit_caption(
             f"⚔️ **BATTLE TURN {turn}** ⚔️\n\n{attack_text}\n\n"
-            f"❤️ {message.from_user.first_name}: {hp_user} {hp_bar(hp_user)}\n"
-            f"❤️ {opponent_username}: {hp_opponent} {hp_bar(hp_opponent)}",
+            f"❤️ {user_name}: {hp_user} {hp_bar(hp_user)}\n"
+            f"❤️ {opponent_name}: {hp_opponent} {hp_bar(hp_opponent)}",
             parse_mode="markdown"
         )
 
@@ -136,27 +156,25 @@ async def battle_cmd(client, message):
     if hp_user > 0:
         winner_id = user_id
         loser_id = opponent_id
-        winner_name = message.from_user.first_name
-        loser_name = opponent_username
+        winner_name = user_name
+        loser_name = opponent_name
         victory_media = random.choice(WIN_VIDEOS)
         loser_media = random.choice(LOSE_VIDEOS)
     else:
         winner_id = opponent_id
         loser_id = user_id
-        winner_name = opponent_username
-        loser_name = message.from_user.first_name
+        winner_name = opponent_name
+        loser_name = user_name
         victory_media = random.choice(WIN_VIDEOS)
         loser_media = random.choice(LOSE_VIDEOS)
 
-    # Add pot to winner
     pot = bet_amount * 2
-    await user_collection.update_one({"user_id": winner_id}, {"$inc": {"balance": pot}}, upsert=True)
+    await user_collection.update_one({"user_id": winner_id}, {"$inc": {"balance": pot, "wins": 1}})
+    await user_collection.update_one({"user_id": loser_id}, {"$inc": {"losses": 1}})
 
-    # Send final result
-    await message.reply_video(victory_media, caption=f"🏆 {winner_name} WINS the battle! 💰 +{pot} coins")
+    await message.reply_video(victory_media, caption=f"🏆 {winner_name} WINS! 💰 +{pot} coins")
     await message.reply_video(loser_media, caption=f"💀 {loser_name} lost the battle...")
 
-    # Unlock players
     active_battles.pop(user_id, None)
     active_battles.pop(opponent_id, None)
     
