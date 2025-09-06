@@ -6,14 +6,14 @@ from TEAMZYRO.unit.zyro_rarity import rarity_map  # Importing rarity_map
 
 SUDO_USERS = SUDO
 
-@app.on_message(filters.command("gdelete"))
+@app.on_message(filters.command("delete"))
 @require_power("delete_character")
 async def delete_handler(client, message):
     try:
         # Extract arguments from the command
         args = message.text.split()
         if len(args) != 2:
-            await message.reply_text("Incorrect format... Please use: /gdelete ID")
+            await message.reply_text("Incorrect format... Please use: /delete ID")
             return
 
         character_id = args[1]
@@ -38,13 +38,13 @@ async def delete_handler(client, message):
 
 import time
 
-@app.on_message(filters.command("gupdate"))
+@app.on_message(filters.command("update"))
 @require_power("update_character")
 async def update(client: Client, message: Message):
     try:
         args = message.text.split()
         if len(args) != 4:
-            await message.reply_text('Incorrect format. Please use: /gupdate id field new_value')
+            await message.reply_text('Incorrect format. Please use: /update id field new_value')
             return
 
         character_id = args[1]
