@@ -39,15 +39,15 @@ async def start_mines(client, message):
     args = message.text.split()
 
     # Must join check
-if not await is_joined(client, user_id):
-    return await message.reply(
-        "❌ You must join the required group first!",
-        reply_markup=InlineKeyboardMarkup(
-            [
-                [InlineKeyboardButton("Join Group ✅", url="https://t.me/+V-_VFMB8nV40YzJl")]
-            ]
+    if not await is_joined(client, user_id):
+        return await message.reply(
+            "❌ You must join the required group first!",
+            reply_markup=InlineKeyboardMarkup(
+                [
+                    [InlineKeyboardButton("Join Group ✅", url="https://t.me/+V-_VFMB8nV40YzJl")]
+                ]
+            )
         )
-    )
 
     if len(args) < 3:
         return await message.reply("Usage: /mines <coins> <bombs>")
