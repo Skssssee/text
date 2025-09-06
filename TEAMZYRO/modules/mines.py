@@ -16,6 +16,17 @@ async def is_joined(client, user_id):
         return False
 
 
+async def get_balance(user_id: int) -> int:
+    """Fetch user balance from DB."""
+    user = await user_collection.find_one({"id": user_id})
+    return user.get("coins", 0) if user else 0
+
+
+async def update_balance(user_id: int, amount: int):
+    """Update user balance in DB."""
+    await user_collection.update_one({"id": user_id}, {"$inc": {"coins": amount}}, upsert=True)
+
+
 @bot.on_message(filters.command("mines"))
 async def start_mines(client, message):
     user_id = message.from_user.id
@@ -42,14 +53,13 @@ async def start_mines(client, message):
     if bombs >= 10 or bombs < 1:
         return await message.reply("⚠ Bombs must be between 1 and 9.")
 
-    # Check user balance
-    user = await user_collection.find_one({"id": user_id})
-    balance = user.get("coins", 0) if user else 0
+    # Balance check
+    balance = await get_balance(user_id)
     if balance < bet:
         return await message.reply("🚨 Not enough coins to play!")
 
     # Deduct bet immediately
-    await user_collection.update_one({"id": user_id}, {"$inc": {"coins": -bet}}, upsert=True)
+    await update_balance(user_id, -bet)
 
     # Generate mine positions
     mine_positions = random.sample(range(25), bombs)
@@ -98,7 +108,7 @@ async def tap_tile(client, cq):
         # Boom 💥 lost game
         del active_games[user_id]
         return await cq.message.edit_text(
-            f"💥 **Boom! You hit a mine.**\nYou lost {game['bet']} coins."
+            f"💥 **Boom! You hit a mine.**\n❌ You lost {game['bet']} coins."
         )
 
     # Safe tile
@@ -144,9 +154,9 @@ async def cashout(client, cq):
     del active_games[user_id]
 
     # Add winnings to DB
-    await user_collection.update_one({"id": user_id}, {"$inc": {"coins": earned}}, upsert=True)
+    await update_balance(user_id, earned)
 
     await cq.message.edit_text(
         f"✅ **You cashed out!**\n\n"
         f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']}x"
-    )
+                                      )
