@@ -16,7 +16,11 @@ BALANCE_IMAGES = [
     "https://files.catbox.moe/3ilay5.jpg",
     "https://files.catbox.moe/i28al7.jpg",
     "https://files.catbox.moe/k7t6y7.jpg",
-    "https://files.catbox.moe/h0ftuw.jpg"
+    "https://files.catbox.moe/h0ftuw.jpg",
+    "https://files.catbox.moe/syanmk.jpg",
+    "https://files.catbox.moe/shslw1.jpg",
+    "https://files.catbox.moe/xokoit.jpg",
+    "https://files.catbox.moe/6w5fl4.jpg"
 ]
 
 # ✅ BALANCE COMMAND
@@ -178,3 +182,4 @@ async def kill_handler(client, message):
         print(f"Error in /kill command: {e}")
         await message.reply_text("An error occurred while processing the request. Please try again later.")
         
+
