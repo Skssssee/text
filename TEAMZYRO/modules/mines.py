@@ -1,13 +1,12 @@
 import random
 import math
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
 MUST_JOIN = -1002792716047
-
-# Mines game storage
 active_games = {}  # {user_id: {...}}
+
 
 async def is_joined(client, user_id):
     try:
@@ -32,20 +31,21 @@ async def start_mines(client, message):
         )
 
     if len(args) < 3:
-        return await message.reply("Usage: `/mines <coins> <bombs>`")
+        return await message.reply("Usage: /mines <coins> <bombs>")
 
     try:
         bet = int(args[1])
         bombs = int(args[2])
     except:
-        return await message.reply("⚠ Invalid numbers. Example: `/mines 50 3`")
+        return await message.reply("⚠ Invalid numbers. Example: /mines 50 3")
 
     if bombs >= 10 or bombs < 1:
         return await message.reply("⚠ Bombs must be between 1 and 9.")
 
     # Check user balance
     user = await user_collection.find_one({"id": user_id})
-    if not user or user.get("coins", 0) < bet:
+    balance = user.get("coins", 0) if user else 0
+    if balance < bet:
         return await message.reply("🚨 Not enough coins to play!")
 
     # Deduct bet immediately
@@ -105,7 +105,7 @@ async def tap_tile(client, cq):
     game["multiplier"] += 0.25
     earned = math.floor(game["bet"] * game["multiplier"])
 
-    # Update grid
+    # Update grid with ✅
     grid = []
     for i in range(5):
         row = []
@@ -149,4 +149,4 @@ async def cashout(client, cq):
     await cq.message.edit_text(
         f"✅ **You cashed out!**\n\n"
         f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']}x"
-        )
+    )
