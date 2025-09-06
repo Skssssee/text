@@ -1,7 +1,9 @@
 import asyncio
 from pyrogram import filters
 from pyrogram.errors import PeerIdInvalid, FloodWait
-from TEAMZYRO import user_collection, app, top_global_groups_collection, require_power
+from TEAMZYRO import user_collection, group_collection, app, require_power  
+
+# 👆 NOTE: yaha group_collection rakha hai (make sure aapke DB me groups isi naam se save ho rahe hain)
 
 @app.on_message(filters.command("bcast"))
 @require_power("bcast")
@@ -12,74 +14,75 @@ async def broadcast(_, message):
         return
 
     # Send initial progress message
-    progress_message = await message.reply_text("📢 Starting the broadcast. Forwarding the message to all users and groups...")
+    progress_message = await message.reply_text("📢 Starting broadcast...")
 
     success_count = 0
     fail_count = 0
-    message_count = 0
     user_success = 0
     group_success = 0
-    
-    # Function to forward the message
+    message_count = 0
+
+    # --- Forward function ---
     async def forward_message(target_id):
         nonlocal success_count, fail_count, message_count
         try:
-            await replied_message.forward(target_id)
+            await replied_message.copy(target_id)  # ✅ copy works better than forward (avoids restrictions)
             success_count += 1
             message_count += 1
         except PeerIdInvalid:
             fail_count += 1
         except FloodWait as e:
             await asyncio.sleep(e.value)
-            await forward_message(target_id)  # Retry after waiting
+            await forward_message(target_id)
         except Exception as e:
-            print(f"Error forwarding to {target_id}: {e}")
+            print(f"Error broadcasting to {target_id}: {e}")
             fail_count += 1
 
-        # Introduce a delay after every 7 messages
+        # Slow down after every 7 messages
         if message_count % 7 == 0:
             await asyncio.sleep(2)
 
-    # Function to update progress
+    # --- Progress update ---
     async def update_progress():
-        await progress_message.edit_text(
-            f"📢 Broadcast in progress...\n"
-            f"✅ Users sent: {user_success}\n"
-            f"✅ Groups sent: {group_success}\n"
-            f"❌ Failed attempts: {fail_count}"
-        )
+        try:
+            await progress_message.edit_text(
+                f"📢 Broadcast in progress...\n"
+                f"👤 Users sent: {user_success}\n"
+                f"👥 Groups sent: {group_success}\n"
+                f"❌ Failed: {fail_count}"
+            )
+        except Exception:
+            pass
 
-    # Forward to users
+    # --- Send to Users ---
     user_cursor = user_collection.find({})
-    
     async for user in user_cursor:
-        user_id = user.get('id')
+        user_id = user.get("id")
         if user_id:
             await forward_message(user_id)
             user_success += 1
 
-            # Update progress every 100 users
             if user_success % 100 == 0:
                 await update_progress()
 
-    # Forward to groups
-    group_cursor = top_global_groups_collection.find({})
+    # --- Send to Groups ---
+    group_cursor = group_collection.find({})
     unique_group_ids = set()
     async for group in group_cursor:
-        group_id = group.get('group_id')
+        group_id = group.get("group_id")
         if group_id and group_id not in unique_group_ids:
             unique_group_ids.add(group_id)
             await forward_message(group_id)
             group_success += 1
 
-            # Update progress every 100 groups
-            if group_success % 100 == 0:
+            if group_success % 50 == 0:
                 await update_progress()
 
-    # Final report
+    # --- Final Report ---
     await progress_message.edit_text(
         f"✅ Broadcast completed!\n"
-        f"✅ Users sent: {user_success}\n"
-        f"✅ Groups sent: {group_success}\n"
-        f"❌ Failed attempts: {fail_count}"
-    )
+        f"👤 Users sent: {user_success}\n"
+        f"👥 Groups sent: {group_success}\n"
+        f"❌ Failed: {fail_count}"
+        )
+    
