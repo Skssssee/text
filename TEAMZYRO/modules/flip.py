@@ -52,10 +52,10 @@ async def coin_flip(client, message):
             caption="❌ ᴀᴍᴏᴜɴᴛ ᴍᴜsᴛ ʙᴇ ᴘᴏsɪᴛɪᴠᴇ!"
         )
 
-    # Fetch user balance
-    user = await user_collection.find_one({"user_id": user_id})
+    # ✅ Fetch user balance with same field ("id")
+    user = await user_collection.find_one({"id": user_id})
     if not user:
-        user = {"user_id": user_id, "balance": 1000}
+        user = {"id": user_id, "balance": 1000}
         await user_collection.insert_one(user)
 
     balance = user["balance"]
@@ -68,7 +68,7 @@ async def coin_flip(client, message):
 
     # Deduct bet first
     await user_collection.update_one(
-        {"user_id": user_id},
+        {"id": user_id},
         {"$inc": {"balance": -amount}}
     )
 
@@ -79,7 +79,7 @@ async def coin_flip(client, message):
     if choice == result:
         win_amount = amount * 2
         await user_collection.update_one(
-            {"user_id": user_id},
+            {"id": user_id},
             {"$inc": {"balance": win_amount}}
         )
         final_text = (
@@ -93,7 +93,7 @@ async def coin_flip(client, message):
         )
 
     # Fetch updated balance
-    updated_user = await user_collection.find_one({"user_id": user_id})
+    updated_user = await user_collection.find_one({"id": user_id})
     final_balance = updated_user["balance"]
 
     caption = f"{final_text}\n\n💰 ᴄᴜʀʀᴇɴᴛ ʙᴀʟᴀɴᴄᴇ: **{final_balance}**"
@@ -102,4 +102,4 @@ async def coin_flip(client, message):
     await message.reply_video(
         video_url,
         caption=f"||{caption}||"
-    )
+        )
