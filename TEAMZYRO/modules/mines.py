@@ -13,7 +13,7 @@ async def start_mines(client, message):
     args = message.text.split()
     
     if len(args) < 3:
-        return await message.reply("Usage: /mines <coins> <bombs>")
+        return await message.reply("Usage: /mines [coins] [bombs]")
 
     try:
         bet = int(args[1])
@@ -54,10 +54,11 @@ async def start_mines(client, message):
     )
 
 # Tile click
-@bot.on_callback_query(filters.regex(r"^(\d+):(\d+)$"))
+@bot.on_callback_query(filters.regex(r"^\d+:\d+$"))
 async def tap_tile(client, cq):
-    user_id = int(cq.matches[0].group(1))
-    pos = int(cq.matches[0].group(2))
+    user_id, pos = cq.data.split(":")
+    user_id = int(user_id)
+    pos = int(pos)
 
     if cq.from_user.id != user_id:
         return await cq.answer("This is not your game!", show_alert=True)
@@ -116,4 +117,5 @@ async def cashout(client, cq):
 
     await cq.message.edit_text(
         f"✅ Cashed out!\nWon: {earned}\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}"
-               )
+)
+    
