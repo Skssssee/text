@@ -1,56 +1,54 @@
-from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 import random
 import math
-from TEAMZYRO import ZYRO as bot   # 👈 Ye tumhare bot ka client hai
-from TEAMZYRO import user_collection   # agar coins DB me rakhe ho
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from TEAMZYRO import ZYRO as bot, user_collection
 
-# Required Group ID (must join)
 MUST_JOIN = -1002792716047
 
 # Mines game storage
 active_games = {}  # {user_id: {...}}
 
-# Check if user joined required group
-async def is_joined(bot, user_id):
+async def is_joined(client, user_id):
     try:
-        member = await bot.get_chat_member(MUST_JOIN, user_id)
+        member = await client.get_chat_member(MUST_JOIN, user_id)
         return member.status not in ["left", "kicked"]
     except:
         return False
 
 
 @bot.on_message(filters.command("mines"))
-async def start_mines(bot, message):
+async def start_mines(client, message):
     user_id = message.from_user.id
     args = message.text.split()
 
-    if not await is_joined(bot, user_id):
+    # Must join check
+    if not await is_joined(client, user_id):
         return await message.reply(
-            "❌ ʏᴏᴜ ᴍᴜꜱᴛ ᴊᴏɪɴ ᴛʜᴇ ʀᴇǫᴜɪʀᴇᴅ ɢʀᴏᴜᴘ ꜰɪʀꜱᴛ!",
+            "❌ You must join the required group first!",
             reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("ᴊᴏɪɴ ɢʀᴏᴜᴘ ✅", url=f"https://t.me/c/{str(MUST_JOIN)[4:]}")]]
+                [[InlineKeyboardButton("Join Group ✅", url=f"https://t.me/c/{str(MUST_JOIN)[4:]}")]]
             )
         )
 
     if len(args) < 3:
-        return await message.reply("ᴜꜱᴀɢᴇ: `/mines <coins> <bombs>`")
+        return await message.reply("Usage: `/mines <coins> <bombs>`")
 
     try:
         bet = int(args[1])
         bombs = int(args[2])
     except:
-        return await message.reply("⚠ ɪɴᴠᴀʟɪᴅ ɴᴜᴍʙᴇʀꜱ. ᴇxᴀᴍᴘʟᴇ: `/mines 50 3`")
+        return await message.reply("⚠ Invalid numbers. Example: `/mines 50 3`")
 
     if bombs >= 10 or bombs < 1:
-        return await message.reply("⚠ ʙᴏᴍʙꜱ ᴍᴜꜱᴛ ʙᴇ ʙᴇᴛᴡᴇᴇɴ 1 ᴀɴᴅ 9.")
+        return await message.reply("⚠ Bombs must be between 1 and 9.")
 
-    # (optional) check coins from DB
-    user_data = await user_collection.find_one({"id": user_id})
-    if not user_data or user_data.get("coins", 0) < bet:
-        return await message.reply("💸 ɴᴏᴛ ᴇɴᴏᴜɢʜ ᴄᴏɪɴꜱ!")
+    # Check user balance
+    user = await user_collection.find_one({"id": user_id})
+    if not user or user.get("coins", 0) < bet:
+        return await message.reply("🚨 Not enough coins to play!")
 
-    # deduct coins from user wallet
+    # Deduct bet immediately
     await user_collection.update_one({"id": user_id}, {"$inc": {"coins": -bet}}, upsert=True)
 
     # Generate mine positions
@@ -69,40 +67,38 @@ async def start_mines(bot, message):
     for i in range(5):
         row = [InlineKeyboardButton("❓", callback_data=f"mine_{user_id}_{i*5+j}") for j in range(5)]
         grid.append(row)
-    grid.append([InlineKeyboardButton("💸 ᴄᴀꜱʜ ᴏᴜᴛ", callback_data=f"cashout_{user_id}")])
+    grid.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout_{user_id}")])
 
     await message.reply(
-        f"🎮 **ᴍɪɴᴇꜱ ɢᴀᴍᴇ ꜱᴛᴀʀᴛᴇᴅ!**\n\n"
-        f"💰 ʙᴇᴛ: {bet} ᴄᴏɪɴꜱ\n💣 ʙᴏᴍʙꜱ: {bombs}\n"
-        f"ᴍᴜʟᴛɪᴘʟɪᴇʀ: 1.0x\n\n"
-        f"👉 ᴛᴀᴘ ᴀɴʏ ᴛɪʟᴇ ᴛᴏ ʙᴇɢɪɴ!",
+        f"🎮 **Mines Game Started!**\n\n"
+        f"💰 Bet: {bet} coins\n💣 Bombs: {bombs}\nMultiplier: 1.0x\n\n"
+        f"👉 Tap any tile to begin!",
         reply_markup=InlineKeyboardMarkup(grid)
     )
 
 
 @bot.on_callback_query(filters.regex(r"mine_(\d+)_(\d+)"))
-async def tap_tile(bot, cq):
+async def tap_tile(client, cq):
     user_id = int(cq.matches[0].group(1))
     pos = int(cq.matches[0].group(2))
 
     if cq.from_user.id != user_id:
-        return await cq.answer("⚠ ɴᴏᴛ ʏᴏᴜʀ ɢᴀᴍᴇ!", show_alert=True)
+        return await cq.answer("This is not your game!", show_alert=True)
 
     game = active_games.get(user_id)
     if not game:
-        return await cq.answer("⚠ ɴᴏ ᴀᴄᴛɪᴠᴇ ɢᴀᴍᴇ!", show_alert=True)
+        return await cq.answer("⚠ Game not found!", show_alert=True)
 
     if pos in game["clicked"]:
-        return await cq.answer("ᴀʟʀᴇᴀᴅʏ ᴏᴘᴇɴᴇᴅ!", show_alert=True)
+        return await cq.answer("Already opened!", show_alert=True)
 
     game["clicked"].append(pos)
 
     if pos in game["mine_positions"]:
-        # Boom 💥
+        # Boom 💥 lost game
         del active_games[user_id]
         return await cq.message.edit_text(
-            f"💥 **ʙᴏᴏᴍ! ʏᴏᴜ ʜɪᴛ ᴀ ᴍɪɴᴇ.**\n"
-            f"❌ ʏᴏᴜ ʟᴏꜱᴛ {game['bet']} ᴄᴏɪɴꜱ."
+            f"💥 **Boom! You hit a mine.**\nYou lost {game['bet']} coins."
         )
 
     # Safe tile
@@ -120,38 +116,37 @@ async def tap_tile(bot, cq):
             else:
                 row.append(InlineKeyboardButton("❓", callback_data=f"mine_{user_id}_{idx}"))
         grid.append(row)
-    grid.append([InlineKeyboardButton("💸 ᴄᴀꜱʜ ᴏᴜᴛ", callback_data=f"cashout_{user_id}")])
+    grid.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout_{user_id}")])
 
     await cq.message.edit_text(
-        f"🎮 **ᴍɪɴᴇꜱ ɢᴀᴍᴇ**\n\n"
-        f"💰 ʙᴇᴛ: {game['bet']} ᴄᴏɪɴꜱ\n"
-        f"💣 ʙᴏᴍʙꜱ: {game['bombs']}\n"
-        f"📈 ᴍᴜʟᴛɪᴘʟɪᴇʀ: {game['multiplier']}x\n"
-        f"💵 ᴘᴏᴛᴇɴᴛɪᴀʟ ᴡɪɴ: {earned} ᴄᴏɪɴꜱ\n\n"
-        f"👉 ᴄᴏɴᴛɪɴᴜᴇ ᴏʀ ᴄᴀꜱʜ ᴏᴜᴛ?",
+        f"🎮 **Mines Game**\n\n"
+        f"💰 Bet: {game['bet']} coins\n"
+        f"💣 Bombs: {game['bombs']}\n"
+        f"Multiplier: {game['multiplier']}x\n"
+        f"Potential Win: {earned} coins\n\n"
+        f"👉 Keep going or Cash Out?",
         reply_markup=InlineKeyboardMarkup(grid)
     )
 
 
 @bot.on_callback_query(filters.regex(r"cashout_(\d+)"))
-async def cashout(bot, cq):
+async def cashout(client, cq):
     user_id = int(cq.matches[0].group(1))
 
     if cq.from_user.id != user_id:
-        return await cq.answer("⚠ ɴᴏᴛ ʏᴏᴜʀ ɢᴀᴍᴇ!", show_alert=True)
+        return await cq.answer("This is not your game!", show_alert=True)
 
     game = active_games.get(user_id)
     if not game:
-        return await cq.answer("⚠ ɴᴏ ᴀᴄᴛɪᴠᴇ ɢᴀᴍᴇ!", show_alert=True)
+        return await cq.answer("⚠ No active game!", show_alert=True)
 
     earned = math.floor(game["bet"] * game["multiplier"])
     del active_games[user_id]
 
-    # add earned coins back to DB
+    # Add winnings to DB
     await user_collection.update_one({"id": user_id}, {"$inc": {"coins": earned}}, upsert=True)
 
     await cq.message.edit_text(
-        f"✅ **ʏᴏᴜ ᴄᴀꜱʜᴇᴅ ᴏᴜᴛ!**\n\n"
-        f"💰 ᴡᴏɴ: {earned} ᴄᴏɪɴꜱ\n"
-        f"📈 ᴍᴜʟᴛɪᴘʟɪᴇʀ: {game['multiplier']}x"
-    )
+        f"✅ **You cashed out!**\n\n"
+        f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']}x"
+        )
