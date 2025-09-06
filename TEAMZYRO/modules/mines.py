@@ -7,13 +7,13 @@ from TEAMZYRO import ZYRO as bot, user_collection
 active_games = {}
 
 # Start Mines
-@bot.on_message(filters.command("mines"))
+@bot.on_message(filters.command("bet"))
 async def start_mines(client, message):
     user_id = message.from_user.id
     args = message.text.split()
     
     if len(args) < 3:
-        return await message.reply("Usage: /mines <coins> <bombs>")
+        return await message.reply("Usage: /bet <coins> <bombs>")
 
     try:
         bet = int(args[1])
