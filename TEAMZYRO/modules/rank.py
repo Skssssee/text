@@ -28,8 +28,7 @@ async def rank(client, message):
             InlineKeyboardButton("ᴛᴏᴘ ɢʀᴏᴜᴘ🥀", callback_data="top_group"),
         ],
         [
-            InlineKeyboardButton("ᴍᴛᴏᴘ🥀", callback_data="mtop"),
-            InlineKeyboardButton("ᴛᴏᴋᴇɴs🥀", callback_data="tokens"),
+            InlineKeyboardButton("ᴍᴛᴏᴘ♧", callback_data="mtop"),
         ],
     ]
 
@@ -47,8 +46,7 @@ async def update_caption(callback_query, caption, active_button):
             InlineKeyboardButton("ᴛᴏᴘ ɢʀᴏᴜᴘ🥀" if active_button == "top_group" else "Top Group", callback_data="top_group"),
         ],
         [
-            InlineKeyboardButton("ᴍᴛᴏᴘ🥀" if active_button == "mtop" else "MTOP", callback_data="mtop"),
-            InlineKeyboardButton("ᴛᴏᴋᴇɴs🥀" if active_button == "tokens" else "Tokens", callback_data="tokens"),
+            InlineKeyboardButton("ᴍᴛᴏᴘ♧" if active_button == "mtop" else "MTOP", callback_data="mtop"),  
         ],
     ]
 
@@ -93,7 +91,7 @@ async def top_group_callback(client, callback_query):
 
     await update_caption(callback_query, caption, "top_group")
 
-@Client.on_callback_query(filters.regex("^mtop$"))
+@Client.on_callback_query(filters.regex("^mtop♧"))
 async def mtop_callback(client, callback_query):
     await asyncio.sleep(1)
     top_users = await user_collection.find().sort("balance", -1).limit(10).to_list(length=10)
@@ -105,18 +103,4 @@ async def mtop_callback(client, callback_query):
         coins = user.get("balance", 0)
         caption += f"{rank}. <a href='tg://user?id={user_id}'><b>{first_name}</b></a>: 💸 {coins} Coins\n"
 
-    await update_caption(callback_query, caption, "mtop")
-
-@Client.on_callback_query(filters.regex("^tokens$"))
-async def tokens_callback(client, callback_query):
-    await asyncio.sleep(1)
-    top_users = await user_collection.find().sort("tokens", -1).limit(10).to_list(length=10)
-
-    caption = "<b>ᴛᴏᴋᴇɴs ʟᴇᴀᴅᴇʀʙᴏᴀʀᴅ</b>\n\n🏆 Tᴏᴘ 10 Uꜱᴇʀs ʙʏ Tokens:\n\n"
-    for rank, user in enumerate(top_users, start=1):
-        user_id = user.get("id", "Unknown")
-        first_name = user.get("first_name", "Unknown")
-        tokens = user.get("tokens", 0)
-        caption += f"{rank}. <a href='tg://user?id={user_id}'><b>{first_name}</b></a>: 🪙 {tokens} Tokens\n"
-
-    await update_caption(callback_query, caption, "tokens")
+    await update_caption(callback_query, caption, "mtop♧")
