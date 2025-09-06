@@ -7,13 +7,13 @@ from TEAMZYRO import ZYRO as bot, user_collection
 active_games = {}
 
 # Start Mines
-@bot.on_message(filters.command("bet"))
+@bot.on_message(filters.command("mines"))
 async def start_mines(client, message):
     user_id = message.from_user.id
     args = message.text.split()
     
     if len(args) < 3:
-        return await message.reply("Usage: /bet <coins> <bombs>")
+        return await message.reply("Usage: /mines <coins> <bombs>")
 
     try:
         bet = int(args[1])
@@ -21,20 +21,25 @@ async def start_mines(client, message):
     except:
         return await message.reply("⚠ Invalid numbers")
 
-    if bombs < 1 or bombs > 9:
-        return await message.reply("⚠ Bombs 1-9 only")
+    # ✅ Bomb restriction 3-20 only
+    if bombs < 3 or bombs > 20:
+        return await message.reply("⚠ Bombs must be between 3 and 20!")
 
     user = await user_collection.find_one({"id": user_id})
     balance = user.get("balance", 0) if user else 0
     if balance < bet:
         return await message.reply("🚨 Not enough coins")
 
+    # Bet deduct
     await user_collection.update_one({"id": user_id}, {"$inc": {"balance": -bet}}, upsert=True)
 
     mine_positions = random.sample(range(25), bombs)
     active_games[user_id] = {
-        "bet": bet, "bombs": bombs, "mine_positions": mine_positions,
-        "clicked": [], "multiplier": 1.0
+        "bet": bet,
+        "bombs": bombs,
+        "mine_positions": mine_positions,
+        "clicked": [],
+        "multiplier": 1.0   # starting multiplier
     }
 
     keyboard = []
@@ -44,7 +49,7 @@ async def start_mines(client, message):
     keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout:{user_id}")])
 
     await message.reply(
-        f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.0x",
+        f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.00x",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -66,13 +71,16 @@ async def tap_tile(client, cq):
 
     game["clicked"].append(pos)
 
+    # If mine hit
     if pos in game["mine_positions"]:
         del active_games[user_id]
         return await cq.message.edit_text(f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.")
 
-    game["multiplier"] += 0.25
+    # ✅ Multiplier increase slow (1.05x each safe click)
+    game["multiplier"] += 0.05
     potential_win = math.floor(game["bet"] * game["multiplier"])
 
+    # Update board
     keyboard = []
     for i in range(5):
         row = []
@@ -108,4 +116,5 @@ async def cashout(client, cq):
 
     await cq.message.edit_text(
         f"✅ Cashed out!\nWon: {earned}\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}"
-        )
+    )
+    
