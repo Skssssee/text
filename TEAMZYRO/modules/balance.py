@@ -4,21 +4,29 @@ from pyrogram.types import Message
 import html
 
 async def get_balance(user_id):
-    user_data = await user_collection.find_one({'id': user_id}, {'balance': 1, 'tokens': 1})
+    user_data = await user_collection.find_one({'id': user_id}, {'balance': 1})
     if user_data:
-        return user_data.get('balance', 0), user_data.get('tokens', 0)
-    return 0, 0
+        return user_data.get('balance', 0)
+    return 0
 
+# ✅ Only coins balance + reply with photo
 @app.on_message(filters.command("balance"))
 async def balance(client: Client, message: Message):
     user_id = message.from_user.id
-    user_balance, user_tokens = await get_balance(user_id)
-    response = (
-        f"{html.escape(message.from_user.first_name)} \n◈⌠ {user_balance} coins⌡\n"
-        f"◈ ⌠ {user_tokens} Tokens⌡"
-    )
-    await message.reply_text(response, reply_to_message_id=False)
+    user_balance = await get_balance(user_id)
 
+    caption = (
+        f"👤 {html.escape(message.from_user.first_name)}\n"
+        f"💰 Balance: {user_balance} coins"
+    )
+
+    await message.reply_photo(
+        photo="https://files.catbox.moe/3saw6n.jpg",
+        caption=caption
+    )
+
+
+# --- PAY COMMAND (unchanged) ---
 @app.on_message(filters.command("pay"))
 async def pay(client: Client, message: Message):
     sender_id = message.from_user.id
@@ -46,7 +54,7 @@ async def pay(client: Client, message: Message):
         try:
             recipient_id = int(args[2])
         except ValueError:
-            recipient_username = args[2].lstrip('@')  # Remove @ from username
+            recipient_username = args[2].lstrip('@')
             user_data = await user_collection.find_one({'username': recipient_username}, {'id': 1, 'first_name': 1})
             if user_data:
                 recipient_id = user_data['id']
@@ -59,7 +67,7 @@ async def pay(client: Client, message: Message):
         await message.reply_text("Recipient not found. Reply to a user or provide a valid user ID/username.")
         return
 
-    sender_balance, _ = await get_balance(sender_id)
+    sender_balance = await get_balance(sender_id)
     if sender_balance < amount:
         await message.reply_text("Insufficient balance.")
         return
@@ -67,10 +75,9 @@ async def pay(client: Client, message: Message):
     await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
     await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
 
-    updated_sender_balance, _ = await get_balance(sender_id)
-    updated_recipient_balance, _ = await get_balance(recipient_id)
+    updated_sender_balance = await get_balance(sender_id)
+    updated_recipient_balance = await get_balance(recipient_id)
 
-    # Use first name or ID for recipient in the response
     recipient_display = html.escape(recipient_name or str(recipient_id))
     sender_display = html.escape(message.from_user.first_name or str(sender_id))
 
@@ -85,10 +92,11 @@ async def pay(client: Client, message: Message):
         f"💰 Your New Balance: {updated_recipient_balance} coins"
     )
 
+
+# --- KILL COMMAND (unchanged) ---
 @app.on_message(filters.command("kill"))
 @require_power("VIP")
 async def kill_handler(client, message):
-    # Get the user_id from the reply message
     if message.reply_to_message:
         user_id = message.reply_to_message.from_user.id
     else:
@@ -105,12 +113,10 @@ async def kill_handler(client, message):
 
     try:
         if option == 'f':
-            # Delete full user data
             await user_collection.delete_one({"id": user_id})
             await message.reply_text("The full data of the user has been deleted.")
 
         elif option == 'c':
-            # Delete specific character from the user's collection
             if len(command_args) < 3:
                 await message.reply_text("Please specify a character ID to remove.")
                 return
@@ -126,14 +132,12 @@ async def kill_handler(client, message):
                     await message.reply_text(f"No character with ID {char_id} found in the user's collection.")
                     return
 
-                # Update user collection
                 await user_collection.update_one({"id": user_id}, {"$set": {"characters": updated_characters}})
                 await message.reply_text(f"Character with ID {char_id} has been removed from the user's collection.")
             else:
                 await message.reply_text(f"No characters found in the user's collection.")
 
         elif option == 'b':
-            # Check if amount is provided
             if len(command_args) < 3:
                 await message.reply_text("Please specify an amount to deduct from balance.")
                 return
@@ -144,11 +148,10 @@ async def kill_handler(client, message):
                 await message.reply_text("Invalid amount. Please enter a valid number.")
                 return
 
-            # Fetch user balance
             user_data = await user_collection.find_one({"id": user_id}, {"balance": 1})
             if user_data and "balance" in user_data:
                 current_balance = user_data["balance"]
-                new_balance = max(0, current_balance - amount)  # Ensure balance doesn't go negative
+                new_balance = max(0, current_balance - amount)
                 
                 await user_collection.update_one({"id": user_id}, {"$set": {"balance": new_balance}})
                 await message.reply_text(f"{amount} has been deducted from the user's balance. New balance: {new_balance}")
@@ -161,3 +164,4 @@ async def kill_handler(client, message):
     except Exception as e:
         print(f"Error in /kill command: {e}")
         await message.reply_text("An error occurred while processing the request. Please try again later.")
+        
