@@ -43,13 +43,13 @@ async def balance(client: Client, message: Message):
     )
 
 
-# --- PAY COMMAND (unchanged) ---
+# --- PAY COMMAND (with confirm/cancel) ---
 @app.on_message(filters.command("pay"))
 async def pay(client: Client, message: Message):
     sender_id = message.from_user.id
     args = message.command
 
-    if len(args) < 2:
+    if len(args) < 3:
         await message.reply_text("Usage: /pay <amount> [@username/user_id] or reply to a user.")
         return
 
@@ -89,26 +89,71 @@ async def pay(client: Client, message: Message):
         await message.reply_text("Insufficient balance.")
         return
 
-    await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
-    await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
-
-    updated_sender_balance = await get_balance(sender_id)
-    updated_recipient_balance = await get_balance(recipient_id)
+    # Confirm / Cancel buttons
+    buttons = InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton("✅ Confirm", callback_data=f"pay_confirm:{sender_id}:{recipient_id}:{amount}"),
+                InlineKeyboardButton("❌ Cancel", callback_data=f"pay_cancel:{sender_id}:{recipient_id}:{amount}")
+            ]
+        ]
+    )
 
     recipient_display = html.escape(recipient_name or str(recipient_id))
-    sender_display = html.escape(message.from_user.first_name or str(sender_id))
-
     await message.reply_text(
-        f"✅ You paid {amount} coins to {recipient_display}.\n"
-        f"💰 Your New Balance: {updated_sender_balance} coins"
+        f"⚠️ Are you sure you want to pay {amount} coins to {recipient_display}?",
+        reply_markup=buttons
     )
 
-    await client.send_message(
-        chat_id=recipient_id,
-        text=f"🎉 You received {amount} coins from {sender_display}!\n"
-        f"💰 Your New Balance: {updated_recipient_balance} coins"
-    )
 
+# --- CALLBACK HANDLER FOR PAY ---
+@app.on_callback_query(filters.regex(r"^pay_"))
+async def pay_callback(client, callback_query):
+    data = callback_query.data.split(":")
+    action, sender_id, recipient_id, amount = data[0], int(data[1]), int(data[2]), int(data[3])
+
+    if callback_query.from_user.id != sender_id:
+        await callback_query.answer("You are not allowed to confirm this transaction!", show_alert=True)
+        return
+
+    if action == "pay_cancel":
+        await callback_query.message.edit_text("❌ Payment cancelled.")
+        return
+
+    if action == "pay_confirm":
+        sender_balance = await get_balance(sender_id)
+        if sender_balance < amount:
+            await callback_query.message.edit_text("❌ Transaction failed. Insufficient balance.")
+            return
+
+        # Update balances
+        await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
+        await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
+
+        updated_sender_balance = await get_balance(sender_id)
+        updated_recipient_balance = await get_balance(recipient_id)
+
+        recipient_data = await user_collection.find_one({'id': recipient_id}, {'first_name': 1})
+        recipient_name = recipient_data.get('first_name', str(recipient_id)) if recipient_data else str(recipient_id)
+
+        sender_display = html.escape(callback_query.from_user.first_name or str(sender_id))
+        recipient_display = html.escape(recipient_name)
+
+        # Notify sender
+        await callback_query.message.edit_text(
+            f"✅ You paid {amount} coins to {recipient_display}.\n"
+            f"💰 Your New Balance: {updated_sender_balance} coins"
+        )
+
+        # Notify recipient
+        try:
+            await client.send_message(
+                chat_id=recipient_id,
+                text=f"🎉 You received {amount} coins from {sender_display}!\n"
+                     f"💰 Your New Balance: {updated_recipient_balance} coins"
+            )
+        except:
+            pass
 
 # --- KILL COMMAND (unchanged) ---
 @app.on_message(filters.command("kill"))
@@ -182,4 +227,5 @@ async def kill_handler(client, message):
         print(f"Error in /kill command: {e}")
         await message.reply_text("An error occurred while processing the request. Please try again later.")
         
+
 
