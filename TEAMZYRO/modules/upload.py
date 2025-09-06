@@ -63,7 +63,7 @@ def upload_to_catbox(file_path=None, file_url=None, expires=None, secret=None):
 import asyncio
 upload_lock = asyncio.Lock()
 
-@ZYRO.on_message(filters.command(["gupload"]))
+@ZYRO.on_message(filters.command(["upload"]))
 @require_power("add_character")
 async def ul(client, message):
     global upload_lock
@@ -99,7 +99,7 @@ async def ul(client, message):
                 'id': available_id
             }
 
-            processing_message = await message.reply("<ᴘʀᴏᴄᴇꜱꜱɪɴɢ>....")
+            processing_message = await message.reply("ᴜᴘʟᴏᴀᴅɪɴɢ....")
             path = await reply.download()
             try:
                 catbox_url = upload_to_catbox(path)
@@ -130,7 +130,8 @@ async def ul(client, message):
                 await message.reply_text(
                     f"➲ ᴀᴅᴅᴇᴅ ʙʏ» [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n"
                     f"➥ Character ID: {available_id}\n"
-                    f"➥ Rarity: {rarity_text}"
+                    f"➥ Rarity: {rarity_text}\n"
+                    f"➥ Character Name: {character_name}"
                 )
             except Exception as e:
                 await message.reply_text(f"Character Upload Unsuccessful. Error: {str(e)}")
