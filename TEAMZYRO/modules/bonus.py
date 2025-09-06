@@ -5,7 +5,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
 # Must-join group/channel ID
-MUST_JOIN = -1002792716047   # 👈 tumhari group id
+MUST_JOIN = -1002792716047   # 👈 your group id
 
 # Bonus amounts
 DAILY_COINS = 100
@@ -25,6 +25,7 @@ async def bonus_menu(_, message: t.Message):
         "✨ ʙᴏɴᴜꜱ ᴍᴇɴᴜ ✨\n\nChoose one of the options below:",
         reply_markup=keyboard
     )
+
 
 # Callback handler
 @bot.on_callback_query()
@@ -50,7 +51,7 @@ async def bonus_handler(_, query: t.CallbackQuery):
     if not user:
         user = {
             "id": user_id,
-            "coins": 0,
+            "balance": 0,  # unified field
             "last_daily_claim": None,
             "last_weekly_claim": None,
         }
@@ -70,10 +71,15 @@ async def bonus_handler(_, query: t.CallbackQuery):
 
         await user_collection.update_one(
             {"id": user_id},
-            {"$inc": {"coins": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
+            {"$inc": {"balance": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
         )
+
+        # Fetch updated balance
+        user = await user_collection.find_one({"id": user_id})
+        new_balance = user.get("balance", 0)
+
         return await query.answer(
-            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins",
+            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins\n💎 New Balance: {new_balance} coins",
             show_alert=True
         )
 
@@ -92,10 +98,15 @@ async def bonus_handler(_, query: t.CallbackQuery):
 
         await user_collection.update_one(
             {"id": user_id},
-            {"$inc": {"coins": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
+            {"$inc": {"balance": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
         )
+
+        # Fetch updated balance
+        user = await user_collection.find_one({"id": user_id})
+        new_balance = user.get("balance", 0)
+
         return await query.answer(
-            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins",
+            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins\n💎 New Balance: {new_balance} coins",
             show_alert=True
         )
 
