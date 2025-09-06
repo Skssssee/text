@@ -6,7 +6,7 @@ from TEAMZYRO import ZYRO as bot, user_collection
 
 active_games = {}  # {user_id: {...}}
 
-
+# Start Mines game
 @bot.on_message(filters.command("mines"))
 async def start_mines(client, message):
     user_id = message.from_user.id
@@ -26,12 +26,12 @@ async def start_mines(client, message):
 
     # Check user balance
     user = await user_collection.find_one({"id": user_id})
-    balance = user.get("coins", 0) if user else 0
+    balance = user.get("balance", 0) if user else 0
     if balance < bet:
         return await message.reply("🚨 Not enough coins to play!")
 
     # Deduct bet immediately
-    await user_collection.update_one({"id": user_id}, {"$inc": {"coins": -bet}}, upsert=True)
+    await user_collection.update_one({"id": user_id}, {"$inc": {"balance": -bet}}, upsert=True)
 
     # Generate mine positions
     mine_positions = random.sample(range(25), bombs)
@@ -59,6 +59,7 @@ async def start_mines(client, message):
     )
 
 
+# Tap a tile
 @bot.on_callback_query(filters.regex(r"mine_(\d+)_(\d+)"))
 async def tap_tile(client, cq):
     user_id = int(cq.matches[0].group(1))
@@ -79,8 +80,9 @@ async def tap_tile(client, cq):
     if pos in game["mine_positions"]:
         # Boom 💥 lost game
         del active_games[user_id]
+        # Balance already deducted at start, so just show message
         return await cq.message.edit_text(
-            f"💥 **Boom! You hit a mine.**\nYou lost {game['bet']} coins."
+            f"💥 **Boom! You hit a mine.**\nYou lost {game['bet']} coins.\nBetter luck next time!"
         )
 
     # Safe tile: increase multiplier
@@ -104,13 +106,14 @@ async def tap_tile(client, cq):
         f"🎮 **Mines Game**\n\n"
         f"💰 Bet: {game['bet']} coins\n"
         f"💣 Bombs: {game['bombs']}\n"
-        f"Multiplier: {game['multiplier']}x\n"
+        f"Multiplier: {game['multiplier']:.2f}x\n"
         f"💎 Potential Win: {potential_win} coins\n\n"
         f"👉 Keep going or Cash Out?",
         reply_markup=InlineKeyboardMarkup(grid)
     )
 
 
+# Cash out
 @bot.on_callback_query(filters.regex(r"cashout_(\d+)"))
 async def cashout(client, cq):
     user_id = int(cq.matches[0].group(1))
@@ -125,10 +128,15 @@ async def cashout(client, cq):
     earned = math.floor(game["bet"] * game["multiplier"])
     del active_games[user_id]
 
-    # Add winnings to DB
-    await user_collection.update_one({"id": user_id}, {"$inc": {"coins": earned}}, upsert=True)
+    # Add winnings to user's balance (same as guess game)
+    await user_collection.update_one({"id": user_id}, {"$inc": {"balance": earned}}, upsert=True)
+
+    # Fetch new balance
+    user = await user_collection.find_one({"id": user_id})
+    new_balance = user.get("balance", 0)
 
     await cq.message.edit_text(
         f"✅ **You cashed out!**\n\n"
-        f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']}x"
-                                    )
+        f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']:.2f}x\n"
+        f"💎 New Balance: {new_balance} coins"
+    )
