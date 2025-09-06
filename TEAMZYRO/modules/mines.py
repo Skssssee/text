@@ -78,7 +78,7 @@ async def tap_tile(client, cq):
         return await cq.message.edit_text(f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.")
 
     # ✅ Multiplier increase slow (1.05x each safe click)
-    game["multiplier"] += 2.00
+    game["multiplier"] += 0.05
     potential_win = math.floor(game["bet"] * game["multiplier"])
 
     # Update board
