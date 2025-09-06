@@ -6,7 +6,7 @@ from TEAMZYRO import ZYRO as bot, user_collection
 
 active_games = {}
 
-# Mines start command
+# Start Mines
 @bot.on_message(filters.command("mines"))
 async def start_mines(client, message):
     user_id = message.from_user.id
@@ -21,6 +21,7 @@ async def start_mines(client, message):
     except:
         return await message.reply("⚠ Invalid numbers")
 
+    # ✅ Bomb restriction 3-20 only
     if bombs < 3 or bombs > 20:
         return await message.reply("⚠ Bombs must be between 3 and 20!")
 
@@ -29,7 +30,7 @@ async def start_mines(client, message):
     if balance < bet:
         return await message.reply("🚨 Not enough coins")
 
-    # Deduct bet
+    # Bet deduct
     await user_collection.update_one({"id": user_id}, {"$inc": {"balance": -bet}}, upsert=True)
 
     mine_positions = random.sample(range(25), bombs)
@@ -38,7 +39,7 @@ async def start_mines(client, message):
         "bombs": bombs,
         "mine_positions": mine_positions,
         "clicked": [],
-        "multiplier": 1.0
+        "multiplier": 1.0   # starting multiplier
     }
 
     keyboard = []
@@ -47,9 +48,8 @@ async def start_mines(client, message):
         keyboard.append(row)
     keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout:{user_id}")])
 
-    await message.reply_photo(
-        photo="https://i.ibb.co/3m7sYZj/mine.png",  # ek default photo laga diya
-        caption=f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.00x",
+    await message.reply(
+        f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.00x",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -71,12 +71,12 @@ async def tap_tile(client, cq):
 
     game["clicked"].append(pos)
 
+    # If mine hit
     if pos in game["mine_positions"]:
         del active_games[user_id]
-        return await cq.message.edit_caption(
-            caption=f"💥 Boom! Mine hit.\nLost: {game['bet']} coins."
-        )
+        return await cq.message.edit_text(f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.")
 
+    # ✅ Multiplier increase slow (1.05x each safe click)
     game["multiplier"] += 0.05
     potential_win = math.floor(game["bet"] * game["multiplier"])
 
@@ -93,8 +93,8 @@ async def tap_tile(client, cq):
         keyboard.append(row)
     keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout:{user_id}")])
 
-    await cq.message.edit_caption(
-        caption=f"🎮 Mines Game\nBet: {game['bet']}\nBombs: {game['bombs']}\nMultiplier: {game['multiplier']:.2f}x\nPotential Win: {potential_win}",
+    await cq.message.edit_text(
+        f"🎮 Mines Game\nBet: {game['bet']}\nBombs: {game['bombs']}\nMultiplier: {game['multiplier']:.2f}x\nPotential Win: {potential_win}",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
@@ -114,6 +114,6 @@ async def cashout(client, cq):
     user = await user_collection.find_one({"id": user_id})
     new_balance = user.get("balance", 0)
 
-    await cq.message.edit_caption(
-        caption=f"✅ Cashed out!\nWon: {earned}\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}"
-        )
+    await cq.message.edit_text(
+        f"✅ Cashed out!\nWon: {earned}\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}"
+               )
