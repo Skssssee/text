@@ -1,15 +1,25 @@
 from TEAMZYRO import *
 from pyrogram import Client, filters
 from pyrogram.types import Message
-import html
+import html, random
 
+# --- Balance Helper ---
 async def get_balance(user_id):
     user_data = await user_collection.find_one({'id': user_id}, {'balance': 1})
     if user_data:
         return user_data.get('balance', 0)
     return 0
 
-# ✅ Only coins balance + reply with photo
+# --- Balance Images (Spoiler) ---
+BALANCE_IMAGES = [
+    "https://files.catbox.moe/3saw6n.jpg",
+    "https://files.catbox.moe/3ilay5.jpg",
+    "https://files.catbox.moe/i28al7.jpg",
+    "https://files.catbox.moe/k7t6y7.jpg",
+    "https://files.catbox.moe/h0ftuw.jpg"
+]
+
+# ✅ BALANCE COMMAND
 @app.on_message(filters.command("balance"))
 async def balance(client: Client, message: Message):
     user_id = message.from_user.id
@@ -17,12 +27,15 @@ async def balance(client: Client, message: Message):
 
     caption = (
         f"👤 {html.escape(message.from_user.first_name)}\n"
-        f"💰 Balance: {user_balance} coins"
+        f"💰 Balance: ||{user_balance} coins||"
     )
 
+    photo_url = random.choice(BALANCE_IMAGES)
+
     await message.reply_photo(
-        photo="https://files.catbox.moe/3saw6n.jpg",
-        caption=caption
+        photo=photo_url,
+        caption=caption,
+        has_spoiler=True   # 👈 photo bhi spoiler me hoga
     )
 
 
