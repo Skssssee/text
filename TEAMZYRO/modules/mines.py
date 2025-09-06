@@ -6,9 +6,9 @@ from TEAMZYRO import ZYRO as bot
 from motor.motor_asyncio import AsyncIOMotorClient
 
 # -------------------- MongoDB Setup --------------------
-MONGO_URL = "mongodb+srv://<your_mongo_url>"  # Replace with your MongoDB URI
+MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"  # Replace with your MongoDB URI
 mongo_client = AsyncIOMotorClient(MONGO_URL)
-db = mongo_client["teamzyro_bot"]
+db = mongo_client["gojowaifu"]
 user_collection = db["users"]
 
 # -------------------- Constants --------------------
