@@ -43,7 +43,7 @@ async def balance(client: Client, message: Message):
     )
 
 
-# --- PAY COMMAND (with confirm/cancel) ---
+# --- PAY COMMAND ---
 @app.on_message(filters.command("pay"))
 async def pay(client: Client, message: Message):
     sender_id = message.from_user.id
@@ -53,20 +53,24 @@ async def pay(client: Client, message: Message):
         await message.reply_text("Usage: /pay <amount> [@username/user_id] or reply to a user.")
         return
 
+    # --- Amount check ---
     try:
         amount = int(args[1])
         if amount <= 0:
             raise ValueError
     except ValueError:
-        await message.reply_text("Invalid amount. Please enter a positive number.")
+        await message.reply_text("❌ Invalid amount. Please enter a positive number.")
         return
 
     recipient_id = None
     recipient_name = None
 
+    # If replied to user
     if message.reply_to_message:
         recipient_id = message.reply_to_message.from_user.id
         recipient_name = message.reply_to_message.from_user.first_name
+
+    # If username or ID given
     elif len(args) > 2:
         try:
             recipient_id = int(args[2])
@@ -77,19 +81,19 @@ async def pay(client: Client, message: Message):
                 recipient_id = user_data['id']
                 recipient_name = user_data.get('first_name', recipient_username)
             else:
-                await message.reply_text("Recipient not found. Please check the username or reply to a user.")
+                await message.reply_text("❌ Recipient not found.")
                 return
 
     if not recipient_id:
-        await message.reply_text("Recipient not found. Reply to a user or provide a valid user ID/username.")
+        await message.reply_text("❌ Recipient not found. Reply to a user or provide a valid user ID/username.")
         return
 
     sender_balance = await get_balance(sender_id)
     if sender_balance < amount:
-        await message.reply_text("Insufficient balance.")
+        await message.reply_text("❌ Insufficient balance.")
         return
 
-    # Confirm / Cancel buttons
+    # --- Confirm/Cancel Buttons ---
     buttons = InlineKeyboardMarkup(
         [
             [
@@ -106,24 +110,30 @@ async def pay(client: Client, message: Message):
     )
 
 
-# --- CALLBACK HANDLER FOR PAY ---
+# --- CALLBACK HANDLER ---
 @app.on_callback_query(filters.regex(r"^pay_"))
 async def pay_callback(client, callback_query):
     try:
         data = callback_query.data.split(":")
-        action, sender_id, recipient_id, amount = data[0], int(data[1]), int(data[2]), int(data[3])
+        action = data[0]          # "pay_confirm" or "pay_cancel"
+        sender_id = int(data[1])
+        recipient_id = int(data[2])
+        amount = int(data[3])
 
-        # Always answer callback (avoid "loading..." stuck)
+        # Always answer callback (avoid stuck loading)
         await callback_query.answer()
 
+        # Security check: only sender can confirm
         if callback_query.from_user.id != sender_id:
-            await callback_query.answer("You are not allowed to confirm this transaction!", show_alert=True)
+            await callback_query.answer("⚠️ You are not allowed to confirm this transaction!", show_alert=True)
             return
 
+        # Cancel
         if action == "pay_cancel":
             await callback_query.message.edit_text("❌ Payment cancelled.")
             return
 
+        # Confirm
         if action == "pay_confirm":
             sender_balance = await get_balance(sender_id)
             if sender_balance < amount:
@@ -132,7 +142,7 @@ async def pay_callback(client, callback_query):
 
             # Update balances
             await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
-            await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
+            await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}}, upsert=True)
 
             updated_sender_balance = await get_balance(sender_id)
             updated_recipient_balance = await get_balance(recipient_id)
@@ -158,10 +168,11 @@ async def pay_callback(client, callback_query):
                 )
             except:
                 pass
+
     except Exception as e:
         await callback_query.answer("⚠️ Error in processing payment!", show_alert=True)
         print(f"PAY CALLBACK ERROR: {e}")
-        
+
 
 # --- KILL COMMAND (unchanged) ---
 @app.on_message(filters.command("kill"))
@@ -235,6 +246,7 @@ async def kill_handler(client, message):
         print(f"Error in /kill command: {e}")
         await message.reply_text("An error occurred while processing the request. Please try again later.")
         
+
 
 
 
