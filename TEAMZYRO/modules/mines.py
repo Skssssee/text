@@ -4,16 +4,7 @@ from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
-INVITE_LINK = "https://t.me/+V-_VFMB8nV40YzJl"
 active_games = {}  # {user_id: {...}}
-
-
-async def is_joined(client, user_id):
-    try:
-        member = await client.get_chat_member(MUST_JOIN, user_id)
-        return member.status not in ["left", "kicked"]
-    except:
-        return False
 
 
 @bot.on_message(filters.command("mines"))
@@ -21,15 +12,6 @@ async def start_mines(client, message):
     user_id = message.from_user.id
     args = message.text.split()
 
-    # Must join check
-    if not await is_joined(client, user_id):
-        return await message.reply(
-            "❌ You must join the required group first!",
-            reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton("Join Group ✅", url=INVITE_LINK)]]
-        )
-        )
-        
     if len(args) < 3:
         return await message.reply("Usage: /mines <coins> <bombs>")
 
@@ -71,7 +53,7 @@ async def start_mines(client, message):
 
     await message.reply(
         f"🎮 **Mines Game Started!**\n\n"
-        f"💰 Bet: {bet} coins\n💣 Bombs: {bombs}\nMultiplier: 1.0x\n\n"
+        f"💰 Bet: {bet} coins (deducted)\n💣 Bombs: {bombs}\nMultiplier: 1.0x\n\n"
         f"👉 Tap any tile to begin!",
         reply_markup=InlineKeyboardMarkup(grid)
     )
@@ -101,9 +83,9 @@ async def tap_tile(client, cq):
             f"💥 **Boom! You hit a mine.**\nYou lost {game['bet']} coins."
         )
 
-    # Safe tile
+    # Safe tile: increase multiplier
     game["multiplier"] += 0.25
-    earned = math.floor(game["bet"] * game["multiplier"])
+    potential_win = math.floor(game["bet"] * game["multiplier"])
 
     # Update grid with ✅
     grid = []
@@ -123,7 +105,7 @@ async def tap_tile(client, cq):
         f"💰 Bet: {game['bet']} coins\n"
         f"💣 Bombs: {game['bombs']}\n"
         f"Multiplier: {game['multiplier']}x\n"
-        f"Potential Win: {earned} coins\n\n"
+        f"💎 Potential Win: {potential_win} coins\n\n"
         f"👉 Keep going or Cash Out?",
         reply_markup=InlineKeyboardMarkup(grid)
     )
@@ -149,4 +131,4 @@ async def cashout(client, cq):
     await cq.message.edit_text(
         f"✅ **You cashed out!**\n\n"
         f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']}x"
-        )
+                                    )
