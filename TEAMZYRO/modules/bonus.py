@@ -5,7 +5,7 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
 # Must-join group/channel ID
-MUST_JOIN = -1002792716047   # 👈 yaha aapka diya hua id use ho raha hai
+MUST_JOIN = -1002792716047   # 👈 tumhari group id
 
 # Bonus amounts
 DAILY_COINS = 100
@@ -30,26 +30,19 @@ async def bonus_menu(_, message: t.Message):
 @bot.on_callback_query()
 async def bonus_handler(_, query: t.CallbackQuery):
     user_id = query.from_user.id
-    mention = query.from_user.mention  # 👈 yaha se user ka actual naam aayega
 
     # Must-join check
     try:
         member = await bot.get_chat_member(MUST_JOIN, user_id)
-        if member.status not in ["member", "administrator", "creator"]:
-            join_button = InlineKeyboardMarkup(
-                [[InlineKeyboardButton("🔔 Join Required Group", url="https://t.me/+V-_VFMB8nV40YzJl")]]
-            )
-            return await query.message.reply_text(
+        if member.status in ["left", "kicked"]:
+            return await query.answer(
                 "🚨 You must join the required group to claim your bonus!",
-                reply_markup=join_button
+                show_alert=True
             )
     except Exception:
-        join_button = InlineKeyboardMarkup(
-            [[InlineKeyboardButton("🔔 Join Required Group", url="https://t.me/+V-_VFMB8nV40YzJl")]]
-        )
-        return await query.message.reply_text(
+        return await query.answer(
             "🚨 You must join the required group to claim your bonus!",
-            reply_markup=join_button
+            show_alert=True
         )
 
     # Get user data or create if not exists
@@ -80,7 +73,7 @@ async def bonus_handler(_, query: t.CallbackQuery):
             {"$inc": {"coins": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
         )
         return await query.answer(
-            f"🎉 {mention}, you claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins",
+            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins",
             show_alert=True
         )
 
@@ -102,7 +95,7 @@ async def bonus_handler(_, query: t.CallbackQuery):
             {"$inc": {"coins": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
         )
         return await query.answer(
-            f"🎉 {mention}, you claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins",
+            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins",
             show_alert=True
         )
 
