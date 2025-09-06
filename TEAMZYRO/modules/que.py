@@ -2,7 +2,9 @@ import asyncio
 import html
 import random
 from pyrogram import filters
-from TEAMZYRO import app, user_collection, questions_collection
+from TEAMZYRO import app, user_collection
+
+questions_collection = db["questions"]
 
 # --- Your Sudo IDs ---
 SUDO_USERS = [7553434931, 8189669345, 1741022717]
