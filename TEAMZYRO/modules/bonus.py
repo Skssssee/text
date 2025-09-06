@@ -4,9 +4,12 @@ from pyrogram import Client, filters, types as t
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
+# Must-join group/channel ID
+MUST_JOIN = -1002792716047   # 👈 yaha aapka diya hua id use ho raha hai
+
 # Bonus amounts
 DAILY_COINS = 100
-WEEKLY_COINS = 1500
+WEEKLY_COINS = 1500   # weekly bonus
 
 # /bonus command handler
 @bot.on_message(filters.command("bonus"))
@@ -19,8 +22,7 @@ async def bonus_menu(_, message: t.Message):
         ]
     )
     await message.reply_text(
-        "✨ ʙᴏɴᴜꜱ ᴍᴇɴᴜ ✨\n\n"
-        "Choose one of the options below:",
+        "✨ ʙᴏɴᴜꜱ ᴍᴇɴᴜ ✨\n\nChoose one of the options below:",
         reply_markup=keyboard
     )
 
@@ -28,7 +30,27 @@ async def bonus_menu(_, message: t.Message):
 @bot.on_callback_query()
 async def bonus_handler(_, query: t.CallbackQuery):
     user_id = query.from_user.id
-    mention = query.from_user.mention
+    mention = query.from_user.mention  # 👈 yaha se user ka actual naam aayega
+
+    # Must-join check
+    try:
+        member = await bot.get_chat_member(MUST_JOIN, user_id)
+        if member.status not in ["member", "administrator", "creator"]:
+            join_button = InlineKeyboardMarkup(
+                [[InlineKeyboardButton("🔔 Join Required Group", url="https://t.me/+V-_VFMB8nV40YzJl")]]
+            )
+            return await query.message.reply_text(
+                "🚨 You must join the required group to claim your bonus!",
+                reply_markup=join_button
+            )
+    except Exception:
+        join_button = InlineKeyboardMarkup(
+            [[InlineKeyboardButton("🔔 Join Required Group", url="https://t.me/+V-_VFMB8nV40YzJl")]]
+        )
+        return await query.message.reply_text(
+            "🚨 You must join the required group to claim your bonus!",
+            reply_markup=join_button
+        )
 
     # Get user data or create if not exists
     user = await user_collection.find_one({"id": user_id})
@@ -41,6 +63,7 @@ async def bonus_handler(_, query: t.CallbackQuery):
         }
         await user_collection.insert_one(user)
 
+    # Daily claim
     if query.data == "daily_claim":
         last_daily = user.get("last_daily_claim")
         if last_daily and (datetime.utcnow() - last_daily) < timedelta(days=1):
@@ -56,11 +79,12 @@ async def bonus_handler(_, query: t.CallbackQuery):
             {"id": user_id},
             {"$inc": {"coins": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
         )
-        return await query.message.reply_text(
-            f"🎉 {mention}, you claimed your **Daily Bonus**!\n"
-            f"💰 +{DAILY_COINS} coins"
+        return await query.answer(
+            f"🎉 {mention}, you claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins",
+            show_alert=True
         )
 
+    # Weekly claim
     elif query.data == "weekly_claim":
         last_weekly = user.get("last_weekly_claim")
         if last_weekly and (datetime.utcnow() - last_weekly) < timedelta(weeks=1):
@@ -77,11 +101,12 @@ async def bonus_handler(_, query: t.CallbackQuery):
             {"id": user_id},
             {"$inc": {"coins": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
         )
-        return await query.message.reply_text(
-            f"🎉 {mention}, you claimed your **Weekly Bonus**!\n"
-            f"💰 +{WEEKLY_COINS} coins"
+        return await query.answer(
+            f"🎉 {mention}, you claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins",
+            show_alert=True
         )
 
+    # Close button
     elif query.data == "close_bonus":
         await query.message.delete()
         return
