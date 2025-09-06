@@ -67,6 +67,7 @@ pm_users = db['gaming_pm_users']
 destination_collection = db['gamimg_user_collection']
 destination_char = db['gaming_anime_characters']
 questions_collection = db["questions"]
+group_collection = db["groups"]
 
 # -------------------------- GLOBAL VARIABLES ----------------------------
 app = ZYRO
