@@ -1,162 +1,135 @@
+from pyrogram import Client, filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import random
-import math
-from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from TEAMZYRO import ZYRO as bot, user_collection
+from motor.motor_asyncio import AsyncIOMotorClient
 
-MUST_JOIN = -1002792716047
-active_games = {}  # {user_id: {...}}
+# -------------------- MongoDB Setup --------------------
+MONGO_URL = "mongodb+srv://Gojowaifu:waifu123@gojowaifu.royysxq.mongodb.net/?retryWrites=true&w=majority&appName=Gojowaifu"  # Replace with your MongoDB URI
+mongo_client = AsyncIOMotorClient(MONGO_URL)
+db = mongo_client["Gojowaifu"]
+users = db["users"]
 
-
-async def is_joined(client, user_id):
-    try:
-        member = await client.get_chat_member(MUST_JOIN, user_id)
-        return member.status not in ["left", "kicked"]
-    except:
-        return False
-
-
+# -------------------- User Balance --------------------
 async def get_balance(user_id: int) -> int:
-    """Fetch user balance from DB."""
-    user = await user_collection.find_one({"id": user_id})
-    return user.get("coins", 0) if user else 0
-
+    """Fetch the user's balance. If user not exists, start with 0."""
+    user = await users.find_one({"user_id": user_id})
+    if not user:
+        await users.insert_one({"user_id": user_id, "balance": 0})
+        return 0
+    return user["balance"]
 
 async def update_balance(user_id: int, amount: int):
-    """Update user balance in DB."""
-    await user_collection.update_one({"id": user_id}, {"$inc": {"coins": amount}}, upsert=True)
+    """Add or subtract amount from user balance."""
+    await users.update_one(
+        {"user_id": user_id},
+        {"$inc": {"balance": amount}},
+        upsert=True
+    )
 
+# -------------------- Active Games --------------------
+active_games = {}  # Store ongoing games per user
 
-@bot.on_message(filters.command("mines"))
-async def start_mines(client, message):
+# -------------------- /mines Command --------------------
+@Client.on_message(filters.command("mines"))
+async def mines_start(client, message):
     user_id = message.from_user.id
     args = message.text.split()
 
-    # Must join check
-    if not await is_joined(client, user_id):
-        return await message.reply(
-            "❌ You must join the required group first!",
-            reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Join Group ✅", url=f"https://t.me/c/{str(MUST_JOIN)[4:]}")]]
-            )
-        )
-
     if len(args) < 3:
-        return await message.reply("Usage: /mines <coins> <bombs>")
+        return await message.reply("Usage: `/mines <bet> <mines>`", quote=True)
 
+    # Validate bet and mines_count
     try:
         bet = int(args[1])
-        bombs = int(args[2])
-    except:
-        return await message.reply("⚠ Invalid numbers. Example: /mines 50 3")
+        mines_count = int(args[2])
+    except ValueError:
+        return await message.reply("❌ Bet and mines must be numbers!", quote=True)
 
-    if bombs >= 10 or bombs < 1:
-        return await message.reply("⚠ Bombs must be between 1 and 9.")
-
-    # Balance check
+    # Get user's actual balance
     balance = await get_balance(user_id)
-    if balance < bet:
-        return await message.reply("🚨 Not enough coins to play!")
+    if bet > balance:
+        return await message.reply("❌ Not enough balance!", quote=True)
 
-    # Deduct bet immediately
+    if not (1 <= mines_count <= 24):
+        return await message.reply("❌ Mines must be between 1 and 24.", quote=True)
+
+    # Deduct bet from user's balance
     await update_balance(user_id, -bet)
 
-    # Generate mine positions
-    mine_positions = random.sample(range(25), bombs)
+    # Setup game board
+    board = ["❓"] * 25
+    mine_positions = random.sample(range(25), mines_count)
 
     active_games[user_id] = {
+        "board": board,
+        "mines": mine_positions,
         "bet": bet,
-        "bombs": bombs,
-        "mine_positions": mine_positions,
-        "clicked": [],
-        "multiplier": 1.0
+        "revealed": set(),
+        "status": "playing"
     }
 
-    # Build grid
-    grid = []
-    for i in range(5):
-        row = [InlineKeyboardButton("❓", callback_data=f"mine_{user_id}_{i*5+j}") for j in range(5)]
-        grid.append(row)
-    grid.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout_{user_id}")])
+    # Build inline keyboard
+    keyboard = []
+    for i in range(0, 25, 5):
+        row = [InlineKeyboardButton(board[j], callback_data=f"mines:{user_id}:{j}") for j in range(i, i+5)]
+        keyboard.append(row)
 
     await message.reply(
-        f"🎮 **Mines Game Started!**\n\n"
-        f"💰 Bet: {bet} coins\n💣 Bombs: {bombs}\nMultiplier: 1.0x\n\n"
-        f"👉 Tap any tile to begin!",
-        reply_markup=InlineKeyboardMarkup(grid)
+        f"💣 Mines Game Started!\n\nBet: `{bet}` coins\nMines: `{mines_count}`\nBalance after bet: `{balance - bet}`",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
+# -------------------- Callback for Mines Game --------------------
+@Client.on_callback_query(filters.regex(r"^mines"))
+async def mines_play(client, callback_query: CallbackQuery):
+    data = callback_query.data.split(":")
+    user_id, pos = int(data[1]), int(data[2])
 
-@bot.on_callback_query(filters.regex(r"mine_(\d+)_(\d+)"))
-async def tap_tile(client, cq):
-    user_id = int(cq.matches[0].group(1))
-    pos = int(cq.matches[0].group(2))
-
-    if cq.from_user.id != user_id:
-        return await cq.answer("This is not your game!", show_alert=True)
+    if callback_query.from_user.id != user_id:
+        return await callback_query.answer("❌ This is not your game!", show_alert=True)
 
     game = active_games.get(user_id)
-    if not game:
-        return await cq.answer("⚠ Game not found!", show_alert=True)
+    if not game or game["status"] != "playing":
+        return await callback_query.answer("❌ No active game!", show_alert=True)
 
-    if pos in game["clicked"]:
-        return await cq.answer("Already opened!", show_alert=True)
+    if pos in game["revealed"]:
+        return await callback_query.answer("❌ Already revealed!", show_alert=True)
 
-    game["clicked"].append(pos)
-
-    if pos in game["mine_positions"]:
-        # Boom 💥 lost game
-        del active_games[user_id]
-        return await cq.message.edit_text(
-            f"💥 **Boom! You hit a mine.**\n❌ You lost {game['bet']} coins."
+    # Hit a mine → lose
+    if pos in game["mines"]:
+        for m in game["mines"]:
+            game["board"][m] = "💣"
+        game["status"] = "lost"
+        await callback_query.edit_message_text(
+            "💥 Boom! You hit a mine.\nBetter luck next time!",
+            reply_markup=None
         )
+        return
 
-    # Safe tile
-    game["multiplier"] += 0.25
-    earned = math.floor(game["bet"] * game["multiplier"])
+    # Safe cell
+    game["revealed"].add(pos)
+    game["board"][pos] = "✅"
 
-    # Update grid with ✅
-    grid = []
-    for i in range(5):
-        row = []
-        for j in range(5):
-            idx = i*5+j
-            if idx in game["clicked"]:
-                row.append(InlineKeyboardButton("✅", callback_data="ignore"))
-            else:
-                row.append(InlineKeyboardButton("❓", callback_data=f"mine_{user_id}_{idx}"))
-        grid.append(row)
-    grid.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout_{user_id}")])
+    # Reward calculation
+    safe_cells = 25 - len(game["mines"])
+    reward = int(game["bet"] * len(game["revealed"]) / safe_cells)
 
-    await cq.message.edit_text(
-        f"🎮 **Mines Game**\n\n"
-        f"💰 Bet: {game['bet']} coins\n"
-        f"💣 Bombs: {game['bombs']}\n"
-        f"Multiplier: {game['multiplier']}x\n"
-        f"Potential Win: {earned} coins\n\n"
-        f"👉 Keep going or Cash Out?",
-        reply_markup=InlineKeyboardMarkup(grid)
+    # Update inline keyboard
+    keyboard = []
+    for i in range(0, 25, 5):
+        row = [InlineKeyboardButton(game["board"][j], callback_data=f"mines:{user_id}:{j}") for j in range(i, i+5)]
+        keyboard.append(row)
+
+    await callback_query.edit_message_text(
+        f"✅ Safe! Current potential win: `{reward}` coins\nRevealed: {len(game['revealed'])}/{safe_cells}",
+        reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-
-@bot.on_callback_query(filters.regex(r"cashout_(\d+)"))
-async def cashout(client, cq):
-    user_id = int(cq.matches[0].group(1))
-
-    if cq.from_user.id != user_id:
-        return await cq.answer("This is not your game!", show_alert=True)
-
-    game = active_games.get(user_id)
-    if not game:
-        return await cq.answer("⚠ No active game!", show_alert=True)
-
-    earned = math.floor(game["bet"] * game["multiplier"])
-    del active_games[user_id]
-
-    # Add winnings to DB
-    await update_balance(user_id, earned)
-
-    await cq.message.edit_text(
-        f"✅ **You cashed out!**\n\n"
-        f"💰 Won: {earned} coins\nMultiplier: {game['multiplier']}x"
-                                      )
+    # All safe cells revealed → win
+    if len(game["revealed"]) == safe_cells:
+        await update_balance(user_id, game["bet"] + reward)
+        game["status"] = "won"
+        await callback_query.edit_message_text(
+            f"🎉 You cleared the board!\nYou won `{game['bet'] + reward}` coins!",
+            reply_markup=None
+    )
