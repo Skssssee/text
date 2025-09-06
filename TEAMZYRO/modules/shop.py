@@ -55,8 +55,8 @@ async def show_shop(client, message):
     )
 
     keyboard = [
-        [InlineKeyboardButton("Claim Now!", callback_data=f"buy_{current_index}"),
-         InlineKeyboardButton("Next Legend", callback_data="next")]
+        [InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{current_index}"),
+         InlineKeyboardButton("ɴᴇxᴛ ʟᴇɢᴇɴᴅ", callback_data="next")]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -143,8 +143,8 @@ async def next_item(client, callback_query):
     )
 
     keyboard = [
-        [InlineKeyboardButton("Claim Now!", callback_data=f"buy_{next_index}"),
-         InlineKeyboardButton("Next Legend", callback_data="next")]
+        [InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{next_index}"),
+         InlineKeyboardButton("ɴᴇxᴛ ʟᴇɢᴇɴᴅ", callback_data="next")]
     ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
