@@ -51,15 +51,23 @@ async def send_market_character(user_id, message_or_callback, index: int):
     characters = state["characters"]
     character = characters[index]
 
-    # Use rarity map for display
-    rarity_emoji = rarity_map.get(character.get("rarity_number", character.get("rarity", 1)), "⚪️ Low")
-    price = character.get("price", 5000)
+    # **Use uploaded rarity_number and price exactly**
+    rarity_number = character.get("rarity_number")
+    price = character.get("price")
+
+    # Safety check
+    if rarity_number is None or price is None:
+        return await (message_or_callback.reply if hasattr(message_or_callback, "id") else message_or_callback.message.edit_text)(
+            "⚠ This waifu is misconfigured! Admin please fix."
+        )
+
+    rarity_emoji = rarity_map.get(rarity_number, "⚪️ Low")
 
     caption_message = (
         f"🌟 **Rare Waifu Market!** 🌟\n\n"
         f"**Name:** {character['name']}\n"
         f"**Anime:** {character['anime']}\n"
-        f"**Rarity:** {rarity_emoji}\n"
+        f"**Rarity:** {rarity_emoji} ({rarity_number})\n"
         f"**Price:** {price} coins\n\n"
         f"💎 Only the rarest waifus appear here!"
     )
@@ -104,9 +112,8 @@ async def buy_market_character(client, cq):
     user = await user_collection.find_one({"id": user_id})
     if not user:
         return await cq.answer("🚫 You need to register first!", show_alert=True)
-        return
 
-    price = character.get("price", 5000)
+    price = character.get("price")
     balance = user.get("balance", 0)
 
     if balance < price:
@@ -119,7 +126,7 @@ async def buy_market_character(client, cq):
         "img_url": character["img_url"],
         "name": character["name"],
         "anime": character["anime"],
-        "rarity": character.get("rarity_number", 1),
+        "rarity": character["rarity_number"],
         "id": character.get("id")
     }
 
@@ -153,26 +160,34 @@ async def next_market(client, cq):
 @app.on_message(filters.command("addmarket"))
 @require_power("add_market")
 async def add_to_market(client, message):
+    # format: /addmarket reply_to_photo <name> <anime> <rarity_number> <price>
+    if not message.reply_to_message or not message.reply_to_message.photo:
+        return await message.reply("🚫 Please reply to a photo of the waifu.")
+
     args = message.text.split()[1:]
+    if len(args) != 4:
+        return await message.reply(
+            "❌ Wrong format!\nFormat: /addmarket reply_to_photo <name> <anime> <rarity_number> <price>"
+        )
 
-    if len(args) != 2:
-        return await message.reply("🌌 Usage: /addmarket <character-id> <price>")
-
-    character_id, price = args
+    name, anime, rarity_str, price_str = args
     try:
-        price = int(price)
+        rarity_number = int(rarity_str)
+        price = int(price_str)
     except ValueError:
-        return await message.reply("🚫 Price must be a number!")
+        return await message.reply("🚫 Rarity and price must be numbers!")
 
-    character = await collection.find_one({"id": character_id})
-    if not character:
-        return await message.reply("🚫 This waifu doesn't exist!")
+    file_id = message.reply_to_message.photo.file_id
 
-    # Ensure rarity_number exists and is int
-    rarity_number = int(character.get("rarity_number", 1))
-    character["rarity_number"] = rarity_number
-    character["price"] = price
+    waifu_data = {
+        "_id": ObjectId(),
+        "name": name,
+        "anime": anime,
+        "rarity_number": rarity_number,
+        "price": price,
+        "img_url": file_id
+    }
 
-    await market_collection.insert_one(character)
-    await message.reply(f"🎉 {character['name']} added to the Market for {price} coins! Rarity: {rarity_map.get(rarity_number)}")
+    await market_collection.insert_one(waifu_data)
+    await message.reply(f"🎉 {name} added to the Market! Rarity: {rarity_map.get(rarity_number)} | Price: {price} coins")
     
