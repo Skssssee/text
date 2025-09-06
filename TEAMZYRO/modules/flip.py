@@ -1,7 +1,6 @@
 import random
 from pyrogram import filters
 from TEAMZYRO import ZYRO as bot, user_collection
-from pyrogram.types import InputMediaVideo
 
 # Toss videos
 TOSS_VIDEOS = [
@@ -12,6 +11,14 @@ TOSS_VIDEOS = [
     "https://files.catbox.moe/gxoxl5.mp4"
 ]
 
+# Toss images
+TOSS_IMAGES = [
+    "https://files.catbox.moe/fp8m21.jpg",
+    "https://files.catbox.moe/2t1ixu.jpg",
+    "https://files.catbox.moe/uj3ktk.jpg",
+    "https://files.catbox.moe/1mt3fo.jpg"
+]
+
 @bot.on_message(filters.command("flip"))
 async def coin_flip(client, message):
     user_id = message.from_user.id
@@ -19,19 +26,31 @@ async def coin_flip(client, message):
 
     # Usage check
     if len(args) != 3:
-        return await message.reply("Usage: `/flip <amount> <heads/tails>`", quote=True)
+        return await message.reply_photo(
+            random.choice(TOSS_IMAGES),
+            caption="⚡ ᴜsᴀɢᴇ: `/flip <ᴀᴍᴏᴜɴᴛ> <head/tail>`"
+        )
 
     try:
         amount = int(args[1])
         choice = args[2].lower()
     except ValueError:
-        return await message.reply("❌ Invalid amount!", quote=True)
+        return await message.reply_photo(
+            random.choice(TOSS_IMAGES),
+            caption="❌ ɪɴᴠᴀʟɪᴅ ᴀᴍᴏᴜɴᴛ!"
+        )
 
-    if choice not in ["heads", "tails"]:
-        return await message.reply("❌ Choice must be `heads` or `tails`.", quote=True)
+    if choice not in ["head", "tail"]:
+        return await message.reply_photo(
+            random.choice(TOSS_IMAGES),
+            caption="❌ ᴄʜᴏɪᴄᴇ ᴍᴜsᴛ ʙᴇ `head` ᴏʀ `tail`."
+        )
 
     if amount <= 0:
-        return await message.reply("❌ Amount must be positive.", quote=True)
+        return await message.reply_photo(
+            random.choice(TOSS_IMAGES),
+            caption="❌ ᴀᴍᴏᴜɴᴛ ᴍᴜsᴛ ʙᴇ ᴘᴏsɪᴛɪᴠᴇ!"
+        )
 
     # Fetch user balance
     user = await user_collection.find_one({"user_id": user_id})
@@ -42,18 +61,19 @@ async def coin_flip(client, message):
     balance = user["balance"]
 
     if balance < amount:
-        return await message.reply("❌ You don't have enough balance.", quote=True)
+        return await message.reply_photo(
+            random.choice(TOSS_IMAGES),
+            caption="❌ ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴇɴᴏᴜɢʜ ʙᴀʟᴀɴᴄᴇ!"
+        )
 
-    # Deduct temporary bet
+    # Deduct bet first
     await user_collection.update_one(
         {"user_id": user_id},
         {"$inc": {"balance": -amount}}
     )
 
-    # Random toss result
-    result = random.choice(["heads", "tails"])
-
-    # Select random video
+    # Toss result
+    result = random.choice(["head", "tail"])
     video_url = random.choice(TOSS_VIDEOS)
 
     if choice == result:
@@ -62,20 +82,24 @@ async def coin_flip(client, message):
             {"user_id": user_id},
             {"$inc": {"balance": win_amount}}
         )
-        final_text = f"🪙 Toss Result: **{result.upper()}** 🎉\n✅ You won **+{amount}** coins!"
+        final_text = (
+            f"🪙 ᴛᴏss ʀᴇsᴜʟᴛ: **{result.upper()}** 🎉\n"
+            f"✅ ʏᴏᴜ ᴡᴏɴ **+{amount}** ᴄᴏɪɴs!"
+        )
     else:
-        win_amount = 0
-        final_text = f"🪙 Toss Result: **{result.upper()}** ❌\n❌ You lost **-{amount}** coins."
+        final_text = (
+            f"🪙 ᴛᴏss ʀᴇsᴜʟᴛ: **{result.upper()}** ❌\n"
+            f"❌ ʏᴏᴜ ʟᴏsᴛ **-{amount}** ᴄᴏɪɴs."
+        )
 
     # Fetch updated balance
     updated_user = await user_collection.find_one({"user_id": user_id})
     final_balance = updated_user["balance"]
 
-    caption = f"{final_text}\n\n💰 Balance: **{final_balance}**"
+    caption = f"{final_text}\n\n💰 ᴄᴜʀʀᴇɴᴛ ʙᴀʟᴀɴᴄᴇ: **{final_balance}**"
 
     # Send video with spoiler
     await message.reply_video(
         video_url,
         caption=f"||{caption}||"
-                      )
-  
+    )
