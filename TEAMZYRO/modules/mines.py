@@ -43,7 +43,7 @@ async def start_mines(client, message):
         return await message.reply(
             "❌ You must join the required group first!",
             reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Join Group ✅", url=f"https://t.me/c/{str(MUST_JOIN)[4:]}")]]
+                [[InlineKeyboardButton("Join Group ✅", url="https://t.me/+V-_VFMB8nV40YzJl")]
             )
         )
 
