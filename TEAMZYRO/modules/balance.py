@@ -109,51 +109,59 @@ async def pay(client: Client, message: Message):
 # --- CALLBACK HANDLER FOR PAY ---
 @app.on_callback_query(filters.regex(r"^pay_"))
 async def pay_callback(client, callback_query):
-    data = callback_query.data.split(":")
-    action, sender_id, recipient_id, amount = data[0], int(data[1]), int(data[2]), int(data[3])
+    try:
+        data = callback_query.data.split(":")
+        action, sender_id, recipient_id, amount = data[0], int(data[1]), int(data[2]), int(data[3])
 
-    if callback_query.from_user.id != sender_id:
-        await callback_query.answer("You are not allowed to confirm this transaction!", show_alert=True)
-        return
+        # Always answer callback (avoid "loading..." stuck)
+        await callback_query.answer()
 
-    if action == "pay_cancel":
-        await callback_query.message.edit_text("❌ Payment cancelled.")
-        return
-
-    if action == "pay_confirm":
-        sender_balance = await get_balance(sender_id)
-        if sender_balance < amount:
-            await callback_query.message.edit_text("❌ Transaction failed. Insufficient balance.")
+        if callback_query.from_user.id != sender_id:
+            await callback_query.answer("You are not allowed to confirm this transaction!", show_alert=True)
             return
 
-        # Update balances
-        await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
-        await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
+        if action == "pay_cancel":
+            await callback_query.message.edit_text("❌ Payment cancelled.")
+            return
 
-        updated_sender_balance = await get_balance(sender_id)
-        updated_recipient_balance = await get_balance(recipient_id)
+        if action == "pay_confirm":
+            sender_balance = await get_balance(sender_id)
+            if sender_balance < amount:
+                await callback_query.message.edit_text("❌ Transaction failed. Insufficient balance.")
+                return
 
-        recipient_data = await user_collection.find_one({'id': recipient_id}, {'first_name': 1})
-        recipient_name = recipient_data.get('first_name', str(recipient_id)) if recipient_data else str(recipient_id)
+            # Update balances
+            await user_collection.update_one({'id': sender_id}, {'$inc': {'balance': -amount}})
+            await user_collection.update_one({'id': recipient_id}, {'$inc': {'balance': amount}})
 
-        sender_display = html.escape(callback_query.from_user.first_name or str(sender_id))
-        recipient_display = html.escape(recipient_name)
+            updated_sender_balance = await get_balance(sender_id)
+            updated_recipient_balance = await get_balance(recipient_id)
 
-        # Notify sender
-        await callback_query.message.edit_text(
-            f"✅ You paid {amount} coins to {recipient_display}.\n"
-            f"💰 Your New Balance: {updated_sender_balance} coins"
-        )
+            recipient_data = await user_collection.find_one({'id': recipient_id}, {'first_name': 1})
+            recipient_name = recipient_data.get('first_name', str(recipient_id)) if recipient_data else str(recipient_id)
 
-        # Notify recipient
-        try:
-            await client.send_message(
-                chat_id=recipient_id,
-                text=f"🎉 You received {amount} coins from {sender_display}!\n"
-                     f"💰 Your New Balance: {updated_recipient_balance} coins"
+            sender_display = html.escape(callback_query.from_user.first_name or str(sender_id))
+            recipient_display = html.escape(recipient_name)
+
+            # Notify sender
+            await callback_query.message.edit_text(
+                f"✅ You paid {amount} coins to {recipient_display}.\n"
+                f"💰 Your New Balance: {updated_sender_balance} coins"
             )
-        except:
-            pass
+
+            # Notify recipient
+            try:
+                await client.send_message(
+                    chat_id=recipient_id,
+                    text=f"🎉 You received {amount} coins from {sender_display}!\n"
+                         f"💰 Your New Balance: {updated_recipient_balance} coins"
+                )
+            except:
+                pass
+    except Exception as e:
+        await callback_query.answer("⚠️ Error in processing payment!", show_alert=True)
+        print(f"PAY CALLBACK ERROR: {e}")
+        
 
 # --- KILL COMMAND (unchanged) ---
 @app.on_message(filters.command("kill"))
@@ -227,5 +235,6 @@ async def kill_handler(client, message):
         print(f"Error in /kill command: {e}")
         await message.reply_text("An error occurred while processing the request. Please try again later.")
         
+
 
 
