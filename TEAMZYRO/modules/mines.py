@@ -21,9 +21,9 @@ async def start_mines(client, message):
     except:
         return await message.reply("⚠ Invalid numbers")
 
-    # ✅ Bomb restriction 3-20 only
-    if bombs < 3 or bombs > 20:
-        return await message.reply("⚠ Bombs must be between 3 and 20!")
+    # ✅ Bomb restriction 2-20 only
+    if bombs < 2 or bombs > 20:
+        return await message.reply("⚠ Bombs must be between 2 and 20!")
 
     user = await user_collection.find_one({"id": user_id})
     balance = user.get("balance", 0) if user else 0
@@ -78,7 +78,7 @@ async def tap_tile(client, cq):
         return await cq.message.edit_text(f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.")
 
     # ✅ Multiplier increase slow (1.05x each safe click)
-    game["multiplier"] += 0.05
+    game["multiplier"] += 2.00
     potential_win = math.floor(game["bet"] * game["multiplier"])
 
     # Update board
