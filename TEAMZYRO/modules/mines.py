@@ -1,7 +1,7 @@
 import random
 import math
 import asyncio
-from pyrogram import Client, filters
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
@@ -85,8 +85,9 @@ async def start_mines(client, message):
     )
 
 # --- Tile click handler ---
-@bot.on_callback_query(filters.regex(r"^tile:\d+:\d+$"))
+@bot.on_callback_query(filters.regex(r"^tile:"))
 async def tap_tile(client, cq):
+    await cq.answer()  # always answer first
     try:
         _, user_id_str, pos_str = cq.data.split(":")
         user_id = int(user_id_str)
@@ -150,9 +151,10 @@ async def tap_tile(client, cq):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-# --- Cashout handler with animation ---
-@bot.on_callback_query(filters.regex(r"^cashout:\d+$"))
+# --- Cashout handler ---
+@bot.on_callback_query(filters.regex(r"^cashout:"))
 async def cashout(client, cq):
+    await cq.answer()
     user_id = int(cq.data.split(":")[1])
     if cq.from_user.id != user_id:
         return await cq.answer("This is not your game!", show_alert=True)
@@ -207,14 +209,11 @@ async def ignore_button(client, cq):
     await cq.answer()
 
 # --- Close button handler ---
-@bot.on_callback_query(filters.regex(r"^close:\d+$"))
+@bot.on_callback_query(filters.regex(r"^close:"))
 async def close_game(client, cq):
-    user_id = int(cq.data.split(":")[1])
-    if cq.from_user.id != user_id:
-        return await cq.answer("This is not your message!", show_alert=True)
+    await cq.answer()
     try:
         await cq.message.delete()
     except Exception:
         pass
-    await cq.answer()
-    
+        
