@@ -245,10 +245,10 @@ async def market_buy(client, callback_query):
     try:
         if character.get("video_url"):
             await client.send_video(chat_id=user_id, video=character["video_url"], caption=dm_text)
-            await client.send_photo(chat_id=user_id, photo=tag_img, caption="Tagged image")
+            await client.send_photo(chat_id=user_id, photo=tag_img, caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
         else:
             await client.send_photo(chat_id=user_id, photo=character.get("img_url"), caption=dm_text)
-            await client.send_photo(chat_id=user_id, photo=tag_img, caption="Tagged image")
+            await client.send_photo(chat_id=user_id, photo=tag_img, caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
     except Exception as e:
         LOGGER.warning("Failed to DM user after purchase: %s", e)
         dm_sent = False
