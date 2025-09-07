@@ -5,8 +5,35 @@ from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
-# Store active games
+# Active games memory cache
 active_games = {}
+
+# --- Helper: Save game to DB ---
+async def save_game(user_id, game):
+    await user_collection.update_one(
+        {"id": user_id},
+        {"$set": {"active_game": game}},
+        upsert=True
+    )
+    active_games[user_id] = game
+
+# --- Helper: Load game from DB if missing ---
+async def load_game(user_id):
+    if user_id in active_games:
+        return active_games[user_id]
+    user = await user_collection.find_one({"id": user_id})
+    if user and "active_game" in user:
+        active_games[user_id] = user["active_game"]
+        return active_games[user_id]
+    return None
+
+# --- Helper: Delete game ---
+async def delete_game(user_id):
+    active_games.pop(user_id, None)
+    await user_collection.update_one(
+        {"id": user_id},
+        {"$unset": {"active_game": ""}}
+    )
 
 # --- Start Mines ---
 @bot.on_message(filters.command("mines"))
@@ -36,13 +63,14 @@ async def start_mines(client, message):
 
     # Create game
     mine_positions = random.sample(range(25), bombs)
-    active_games[user_id] = {
+    game = {
         "bet": bet,
         "bombs": bombs,
         "mine_positions": mine_positions,
         "clicked": [],
         "multiplier": 1.0
     }
+    await save_game(user_id, game)
 
     # Build keyboard
     keyboard = [
@@ -55,7 +83,6 @@ async def start_mines(client, message):
         f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.00x",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
 
 # --- Tile click handler ---
 @bot.on_callback_query(filters.regex(r"^tile:\d+:\d+$"))
@@ -70,7 +97,7 @@ async def tap_tile(client, cq):
     if cq.from_user.id != user_id:
         return await cq.answer("This is not your game!", show_alert=True)
 
-    game = active_games.get(user_id)
+    game = await load_game(user_id)
     if not game:
         return await cq.answer("⚠ No active game!", show_alert=True)
 
@@ -81,7 +108,7 @@ async def tap_tile(client, cq):
 
     # Hit a mine → game over
     if pos in game["mine_positions"]:
-        del active_games[user_id]
+        await delete_game(user_id)
         keyboard = []
         for i in range(5):
             row = []
@@ -101,8 +128,9 @@ async def tap_tile(client, cq):
         )
 
     # Safe click → multiplier increase
-    game["multiplier"] += 0.05
+    game["multiplier"] = round(game["multiplier"] + 0.05, 2)
     potential_win = math.floor(game["bet"] * game["multiplier"])
+    await save_game(user_id, game)
 
     # Update keyboard
     keyboard = []
@@ -122,7 +150,6 @@ async def tap_tile(client, cq):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-
 # --- Cashout handler with animation ---
 @bot.on_callback_query(filters.regex(r"^cashout:\d+$"))
 async def cashout(client, cq):
@@ -130,23 +157,22 @@ async def cashout(client, cq):
     if cq.from_user.id != user_id:
         return await cq.answer("This is not your game!", show_alert=True)
 
-    game = active_games.pop(user_id, None)
+    game = await load_game(user_id)
     if not game:
         return await cq.answer("⚠ No active game!", show_alert=True)
 
+    await delete_game(user_id)
     earned = math.floor(game["bet"] * game["multiplier"])
     await user_collection.update_one({"id": user_id}, {"$inc": {"balance": earned}}, upsert=True)
     user = await user_collection.find_one({"id": user_id})
     new_balance = user.get("balance", 0)
 
-    # Animation frames
+    # Animation
     frames = [
-        f"💸 Cashing out...",
-        f"💸 Cashing out... 💰",
-        f"💸 Cashing out... 💰💰",
-        f"💸 Cashing out... 💰💰💰",
-        f"💸 Cashing out... 💰💰💰💰",
-        f"💸 Cashing out... 💰💰💰💰💰"
+        "💸 Cashing out...",
+        "💸 Cashing out... 💰",
+        "💸 Cashing out... 💰💰",
+        "💸 Cashing out... 💰💰💰",
     ]
     for frame in frames:
         try:
@@ -175,12 +201,10 @@ async def cashout(client, cq):
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
-
 # --- Ignore button handler ---
 @bot.on_callback_query(filters.regex("^ignore$"))
 async def ignore_button(client, cq):
-    await cq.answer()  # no alert, no response
-
+    await cq.answer()
 
 # --- Close button handler ---
 @bot.on_callback_query(filters.regex(r"^close:\d+$"))
