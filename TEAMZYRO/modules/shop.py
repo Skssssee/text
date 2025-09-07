@@ -239,7 +239,7 @@ async def buy_character(client, callback_query):
         await shops_collection.update_one({"_id": character["_id"]}, {"$set": {"stock": new_stock}})
 
     # ✅ Popup
-    await callback_query.answer("✅ Payment Successfully Received!", show_alert=True)
+    await callback_query.answer("✅ Payment Successfully Received! Check bot Dm..!", show_alert=True)
 
     # ✅ DM user with waifu (photo/video support)
     try:
