@@ -267,7 +267,7 @@ async def market_buy(client, callback_query):
     )
         
 # --- /madd command ---
-@app.on_message(filters.command("madd") & filters.user(ADMIN_IDS))
+@app.on_message(filters.command("madd") & filters.user(7553434931,7618952261,8189669345,1741022717))
 async def add_market_item(client, message):
     try:
         args = message.text.split(maxsplit=3)
