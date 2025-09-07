@@ -69,7 +69,6 @@ destination_char = db['gaming_anime_characters']
 questions_collection = db["questions"]
 group_collection = db["groups"]
 waifu_collection = db["waifus"]
-markets_collection = db["market"]
 
 # -------------------------- GLOBAL VARIABLES ----------------------------
 app = ZYRO
