@@ -216,9 +216,14 @@ async def market_buy(client, callback_query):
 
 
 # --- /add_market with Stock Support ---
+SUDO_USERS = [7553434931, 8189669345, 1741022717]  # apne admin IDs daal do
+
 @app.on_message(filters.command("add_market"))
-@require_power("add_character")
 async def add_to_market(client, message):
+    user_id = message.from_user.id
+    if user_id not in SUDO_USERS:
+        return await message.reply("❌ You don't have permission to use this command.")
+
     args = message.text.split()[1:]
     if len(args) != 3:
         return await message.reply("🌌 Usage: /add_market [id] [price] [stock]")
@@ -243,5 +248,4 @@ async def add_to_market(client, message):
     await markets_collection.insert_one(character_copy)
     await message.reply(
         f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins! Stock: {stock}"
-        )
-    
+    )
