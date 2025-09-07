@@ -266,3 +266,121 @@ async def market_buy(client, callback_query):
             "I couldn't DM you — please /start the bot so I can send the congratulations DM."
     )
         
+# --- /madd command ---
+@app.on_message(filters.command("madd") & filters.user(ADMIN_IDS))
+async def add_market_item(client, message):
+    try:
+        args = message.text.split(maxsplit=3)
+        if len(args) < 4:
+            return await message.reply(
+                "Usage: /madd [Name] [Rarity] [Price]\nExample: /madd Rem R 500\nReply to waifu photo/video!"
+            )
+
+        name = args[1]
+        rarity = args[2]
+        price = int(args[3])
+
+        if message.reply_to_message:
+            if message.reply_to_message.photo:
+                img_url = await message.reply_to_message.photo.file_id
+                video_url = None
+            elif message.reply_to_message.video:
+                video_url = await message.reply_to_message.video.file_id
+                img_url = None
+            else:
+                return await message.reply("Please reply to a photo or video of the waifu!")
+        else:
+            return await message.reply("You must reply to a photo or video of the waifu!")
+
+        waifu_id = str(uuid.uuid4())[:8]
+        waifu_data = {
+            "name": name,
+            "rarity": rarity,
+            "price": price,
+            "img_url": img_url,
+            "video_url": video_url,
+            "id": waifu_id,
+            "added_by": message.from_user.id,
+        }
+
+        await markets_collection.insert_one(waifu_data)
+
+        await message.reply(
+            f"✅ Character added successfully 🎉\n\n"
+            f"**Name:** {name}\n"
+            f"**Rarity:** {rarity}\n"
+            f"**ID:** {waifu_id}\n"
+            f"**Added by:** {message.from_user.first_name} ({message.from_user.id})",
+            parse_mode="markdown"
+        )
+    except Exception as e:
+        LOGGER.exception("Failed to add market waifu: %s", e)
+        await message.reply(f"🚫 Failed to add waifu: {e}")
+
+
+# --- /mupdate command ---
+@app.on_message(filters.command("mupdate") & filters.user(ADMIN_IDS))
+async def update_market_item(client, message):
+    try:
+        args = message.text.split(maxsplit=4)
+        if len(args) < 5:
+            return await message.reply(
+                "Usage: /mupdate [WaifuID] [New Name] [New Rarity] [New Price]\nReply to new photo/video if updating media!"
+            )
+
+        waifu_id = args[1]
+        new_name = args[2]
+        new_rarity = args[3]
+        new_price = int(args[4])
+
+        update_data = {"name": new_name, "rarity": new_rarity, "price": new_price}
+
+        if message.reply_to_message:
+            if message.reply_to_message.photo:
+                update_data["img_url"] = await message.reply_to_message.photo.file_id
+                update_data["video_url"] = None
+            elif message.reply_to_message.video:
+                update_data["video_url"] = await message.reply_to_message.video.file_id
+                update_data["img_url"] = None
+
+        result = await markets_collection.find_one_and_update(
+            {"id": waifu_id},
+            {"$set": update_data},
+            return_document=ReturnDocument.AFTER
+        )
+
+        if not result:
+            return await message.reply(f"🚫 No waifu found with ID {waifu_id}")
+
+        await message.reply(
+            f"✅ Character updated successfully 🎉\n\n"
+            f"**Name:** {result['name']}\n"
+            f"**Rarity:** {result['rarity']}\n"
+            f"**ID:** {result['id']}",
+            parse_mode="markdown"
+        )
+    except Exception as e:
+        LOGGER.exception("Failed to update waifu: %s", e)
+        await message.reply(f"🚫 Failed to update waifu: {e}")
+
+
+# --- /mdelete command ---
+@app.on_message(filters.command("mdelete") & filters.user(ADMIN_IDS))
+async def delete_market_item(client, message):
+    try:
+        args = message.text.split(maxsplit=1)
+        if len(args) < 2:
+            return await message.reply("Usage: /mdelete [WaifuID]")
+
+        waifu_id = args[1]
+
+        result = await markets_collection.delete_one({"id": waifu_id})
+
+        if result.deleted_count == 0:
+            return await message.reply(f"🚫 No waifu found with ID {waifu_id}")
+
+        await message.reply(f"✅ Waifu with ID {waifu_id} deleted successfully 🎉")
+    except Exception as e:
+        LOGGER.exception("Failed to delete waifu: %s", e)
+        await message.reply(f"🚫 Failed to delete waifu: {e}")
+
