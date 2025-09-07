@@ -58,7 +58,7 @@ async def start_mines(client, message):
 
 
 # --- Tile click handler ---
-@bot.on_callback_query(filters.regex(r"^tile:(\d+):(\d+)$"))
+@bot.on_callback_query(filters.regex(r"^tile:\d+:\d+$"))
 async def tap_tile(client, cq):
     try:
         _, user_id_str, pos_str = cq.data.split(":")
@@ -94,6 +94,7 @@ async def tap_tile(client, cq):
                 else:
                     row.append(InlineKeyboardButton("❎", callback_data="ignore"))
             keyboard.append(row)
+        keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"close:{user_id}")])
         return await cq.message.edit_text(
             f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -123,9 +124,9 @@ async def tap_tile(client, cq):
 
 
 # --- Cashout handler with animation ---
-@bot.on_callback_query(filters.regex(r"^cashout:(\d+)$"))
+@bot.on_callback_query(filters.regex(r"^cashout:\d+$"))
 async def cashout(client, cq):
-    user_id = int(cq.matches[0].group(1))
+    user_id = int(cq.data.split(":")[1])
     if cq.from_user.id != user_id:
         return await cq.answer("This is not your game!", show_alert=True)
 
@@ -167,6 +168,7 @@ async def cashout(client, cq):
             else:
                 row.append(InlineKeyboardButton("❎", callback_data="ignore"))
         keyboard.append(row)
+    keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"close:{user_id}")])
 
     await cq.message.edit_text(
         f"✅ Cashed out!\nWon: {earned} coins\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}",
@@ -178,3 +180,17 @@ async def cashout(client, cq):
 @bot.on_callback_query(filters.regex("^ignore$"))
 async def ignore_button(client, cq):
     await cq.answer()  # no alert, no response
+
+
+# --- Close button handler ---
+@bot.on_callback_query(filters.regex(r"^close:\d+$"))
+async def close_game(client, cq):
+    user_id = int(cq.data.split(":")[1])
+    if cq.from_user.id != user_id:
+        return await cq.answer("This is not your message!", show_alert=True)
+    try:
+        await cq.message.delete()
+    except Exception:
+        pass
+    await cq.answer()
+    
