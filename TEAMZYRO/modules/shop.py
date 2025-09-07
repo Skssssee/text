@@ -39,49 +39,57 @@ LOGGER = logging.getLogger(__name__)
 async def show_shop(client, message):
     user_id = message.from_user.id
 
-    characters = await shops_collection.find().to_list(length=None)
-    if not characters:
-        await message.reply("🌌 The Cosmic Bazaar is empty! No legendary characters await you yet.")
-        return
+    try:
+        characters = await shops_collection.find().to_list(length=None)
+        if not characters:
+            return await message.reply("🌌 The Cosmic Bazaar is empty! No legendary characters await you yet.")
 
-    current_index = 0
-    character = characters[current_index]
+        current_index = 0
+        character = characters[current_index]
 
-    caption_message = (
-        f"🌟 **Step into the Cosmic Bazaar!** 🌟\n\n"
-        f"**Hero:** {character['name']}\n"
-        f"**Realm:** {character['anime']}\n"
-        f"**Legend Tier:** {character['rarity']}\n"
-        f"**Cost:** {character['price']} Star Coins\n"
-        f"**Stock:** {character['stock']}\n"
-        f"**ID:** {character['id']}\n"
-        f"✨ Unleash Epic Legends in Your Collection! ✨"
-    )
-
-    keyboard = [
-        [
-            InlineKeyboardButton("⬅ ᴘʀᴇᴠ", callback_data="prev"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{current_index}"),
-            InlineKeyboardButton("ɴᴇxᴛ ➝", callback_data="next")
-        ],
-        [InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ", callback_data="close")]
-    ]
-
-    # ✅ Detect media type (photo/video)
-    if character['img_url'].endswith((".mp4", ".MP4")):
-        sent = await message.reply_video(
-            video=character['img_url'],
-            caption=caption_message,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-    else:
-        sent = await message.reply_photo(
-            photo=character['img_url'],
-            caption=caption_message,
-            reply_markup=InlineKeyboardMarkup(keyboard)
+        caption = (
+            f"🌟 **Step into the Cosmic Bazaar!** 🌟\n\n"
+            f"**Hero:** {character.get('name','Unknown')}\n"
+            f"**Realm:** {character.get('anime','Unknown')}\n"
+            f"**Legend Tier:** {character.get('rarity','Unknown')}\n"
+            f"**Cost:** {character.get('price',0)} Star Coins\n"
+            f"**Stock:** {character.get('stock',0)}\n"
+            f"**ID:** {character.get('id','N/A')}\n"
+            f"✨ Unleash Epic Legends in Your Collection! ✨"
         )
 
-    user_data[user_id] = {"current_index": current_index, "characters": characters, "shop_message_id": sent.id}
+        keyboard = [
+            [
+                InlineKeyboardButton("⬅ ᴘʀᴇᴠ", callback_data="prev"),
+                InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{current_index}"),
+                InlineKeyboardButton("ɴᴇxᴛ ➝", callback_data="next")
+            ],
+            [InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ", callback_data="close")]
+        ]
+
+        # ✅ Detect media type
+        img_url = character.get('img_url')
+        if not img_url:
+            return await message.reply("⚠ This character has no media URL!")
+
+        if img_url.endswith((".mp4", ".MP4")):
+            sent = await message.reply_video(
+                video=img_url,
+                caption=caption,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+        else:
+            sent = await message.reply_photo(
+                photo=img_url,
+                caption=caption,
+                reply_markup=InlineKeyboardMarkup(keyboard)
+            )
+
+        user_data[user_id] = {"current_index": current_index, "characters": characters, "shop_message_id": sent.id}
+
+    except Exception as e:
+        logging.error(f"Error in /shop: {e}")
+        await message.reply(f"❌ Something went wrong: {e}")
 
 
 # --- Navigation Handler (Next + Prev) ---
