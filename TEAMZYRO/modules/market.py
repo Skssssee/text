@@ -292,7 +292,10 @@ async def market_buy(client, callback_query):
             await callback_query.message.reply_text(f"🎉 {character.get('name')} has been added to <a href='tg://user?id={user_id}'>your collection</a>.", parse_mode="html")
         else:
             await callback_query.answer("🎉 Purchased, but I couldn't DM you. Please start the bot and try again.", show_alert=True)
-            await callback_query.message.reply_text(f"🎉 {character.get('name']} added to your collection. I couldn't DM you — ask them to /start the bot so I can send the congratulations DM.")
+            await callback_query.message.reply_text(
+    f"🎉 {character.get('name')} added to your collection. "
+    "I couldn't DM you — ask them to /start the bot so I can send the congratulations DM."
+                                   )
     except Exception:
         # final fallback
         await callback_query.answer("Purchase processed.", show_alert=True)
