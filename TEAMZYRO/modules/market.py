@@ -273,8 +273,10 @@ async def add_to_market(client, message):
     if character_copy.get("amv_url") and not character_copy.get("video_url"):
         character_copy["video_url"] = character_copy.get("amv_url")
 
+    @bot.on_message(filters.command("add_market"))
+async def add_to_market(client, message):
     await markets_collection.insert_one(character_copy)
-await message.reply(
-    f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
-)
-
+    await message.reply(
+        f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
+    )
+    
