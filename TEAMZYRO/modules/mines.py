@@ -74,10 +74,10 @@ async def start_mines(client, message):
 
     # Build keyboard
     keyboard = [
-        [InlineKeyboardButton("❓", callback_data=f"tile:{user_id}:{i*5+j}") for j in range(5)]
+        [InlineKeyboardButton("❓", callback_data=f"mines_tile:{user_id}:{i*5+j}") for j in range(5)]
         for i in range(5)
     ]
-    keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout:{user_id}")])
+    keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"mines_cashout:{user_id}")])
 
     await message.reply(
         f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.00x",
@@ -85,9 +85,9 @@ async def start_mines(client, message):
     )
 
 # --- Tile click handler ---
-@bot.on_callback_query(filters.regex(r"^tile:"))
+@bot.on_callback_query(filters.regex(r"^mines_tile:"))
 async def tap_tile(client, cq):
-    await cq.answer()  # always answer first
+    await cq.answer()
     try:
         _, user_id_str, pos_str = cq.data.split(":")
         user_id = int(user_id_str)
@@ -116,13 +116,13 @@ async def tap_tile(client, cq):
             for j in range(5):
                 idx = i*5+j
                 if idx in game["mine_positions"]:
-                    row.append(InlineKeyboardButton("💣", callback_data="ignore"))
+                    row.append(InlineKeyboardButton("💣", callback_data="mines_ignore"))
                 elif idx in game["clicked"]:
-                    row.append(InlineKeyboardButton("✅", callback_data="ignore"))
+                    row.append(InlineKeyboardButton("✅", callback_data="mines_ignore"))
                 else:
-                    row.append(InlineKeyboardButton("❎", callback_data="ignore"))
+                    row.append(InlineKeyboardButton("❎", callback_data="mines_ignore"))
             keyboard.append(row)
-        keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"close:{user_id}")])
+        keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"mines_close:{user_id}")])
         return await cq.message.edit_text(
             f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.",
             reply_markup=InlineKeyboardMarkup(keyboard)
@@ -140,11 +140,11 @@ async def tap_tile(client, cq):
         for j in range(5):
             idx = i*5+j
             if idx in game["clicked"]:
-                row.append(InlineKeyboardButton("✅", callback_data="ignore"))
+                row.append(InlineKeyboardButton("✅", callback_data="mines_ignore"))
             else:
-                row.append(InlineKeyboardButton("❓", callback_data=f"tile:{user_id}:{idx}"))
+                row.append(InlineKeyboardButton("❓", callback_data=f"mines_tile:{user_id}:{idx}"))
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout:{user_id}")])
+    keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"mines_cashout:{user_id}")])
 
     await cq.message.edit_text(
         f"🎮 Mines Game\nBet: {game['bet']}\nBombs: {game['bombs']}\nMultiplier: {game['multiplier']:.2f}x\nPotential Win: {potential_win}",
@@ -152,7 +152,7 @@ async def tap_tile(client, cq):
     )
 
 # --- Cashout handler ---
-@bot.on_callback_query(filters.regex(r"^cashout:"))
+@bot.on_callback_query(filters.regex(r"^mines_cashout:"))
 async def cashout(client, cq):
     await cq.answer()
     user_id = int(cq.data.split(":")[1])
@@ -190,13 +190,13 @@ async def cashout(client, cq):
         for j in range(5):
             idx = i*5+j
             if idx in game["mine_positions"]:
-                row.append(InlineKeyboardButton("💣", callback_data="ignore"))
+                row.append(InlineKeyboardButton("💣", callback_data="mines_ignore"))
             elif idx in game["clicked"]:
-                row.append(InlineKeyboardButton("✅", callback_data="ignore"))
+                row.append(InlineKeyboardButton("✅", callback_data="mines_ignore"))
             else:
-                row.append(InlineKeyboardButton("❎", callback_data="ignore"))
+                row.append(InlineKeyboardButton("❎", callback_data="mines_ignore"))
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"close:{user_id}")])
+    keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"mines_close:{user_id}")])
 
     await cq.message.edit_text(
         f"✅ Cashed out!\nWon: {earned} coins\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}",
@@ -204,16 +204,15 @@ async def cashout(client, cq):
     )
 
 # --- Ignore button handler ---
-@bot.on_callback_query(filters.regex("^ignore$"))
+@bot.on_callback_query(filters.regex("^mines_ignore$"))
 async def ignore_button(client, cq):
     await cq.answer()
 
 # --- Close button handler ---
-@bot.on_callback_query(filters.regex(r"^close:"))
+@bot.on_callback_query(filters.regex(r"^mines_close:"))
 async def close_game(client, cq):
     await cq.answer()
     try:
         await cq.message.delete()
     except Exception:
         pass
-        
