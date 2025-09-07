@@ -10,7 +10,12 @@ from bson import ObjectId
 from datetime import datetime, timedelta
 import asyncio
 from pyrogram import Client, filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, InputMediaVideo
+from pyrogram.types import (
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    InputMediaPhoto,
+    InputMediaVideo
+)
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from TEAMZYRO import *
@@ -27,6 +32,7 @@ logging.basicConfig(
     level=logging.INFO,
 )
 LOGGER = logging.getLogger(__name__)
+
 
 # --- Show Shop ---
 @app.on_message(filters.command(["shop", "hshopmenu", "hshop"]))
@@ -47,99 +53,40 @@ async def show_shop(client, message):
         f"**Realm:** {character['anime']}\n"
         f"**Legend Tier:** {character['rarity']}\n"
         f"**Cost:** {character['price']} Star Coins\n"
+        f"**Stock:** {character['stock']}\n"
         f"**ID:** {character['id']}\n"
         f"✨ Unleash Epic Legends in Your Collection! ✨"
     )
 
     keyboard = [
         [
+            InlineKeyboardButton("⬅ ᴘʀᴇᴠ", callback_data="prev"),
             InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{current_index}"),
-            InlineKeyboardButton("ɴᴇxᴛ ʟᴇɢᴇɴᴅ ➝", callback_data="next")
-        ]
+            InlineKeyboardButton("ɴᴇxᴛ ➝", callback_data="next")
+        ],
+        [InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ", callback_data="close")]
     ]
 
-    sent = await message.reply_photo(
-        photo=character['img_url'],
-        caption=caption_message,
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    # ✅ Detect media type (photo/video)
+    if character['img_url'].endswith((".mp4", ".MP4")):
+        sent = await message.reply_video(
+            video=character['img_url'],
+            caption=caption_message,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    else:
+        sent = await message.reply_photo(
+            photo=character['img_url'],
+            caption=caption_message,
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
     user_data[user_id] = {"current_index": current_index, "characters": characters, "shop_message_id": sent.id}
 
 
-# --- Buy Character ---
-@app.on_callback_query(filters.regex(r"^buy_\d+$"))
-async def buy_character(client, callback_query):
-    user_id = callback_query.from_user.id
-    current_index = int(callback_query.data.split("_")[1])
-
-    # Load characters for user session
-    characters = user_data.get(user_id, {}).get("characters", [])
-    if not characters or current_index >= len(characters):
-        await callback_query.answer("🚫 This legend has vanished from the Bazaar!", show_alert=True)
-        return
-
-    character = characters[current_index]
-
-    # Check user balance
-    user = await user_collection.find_one({"id": user_id})
-    if not user:
-        await callback_query.answer("🚫 Traveler, you must register first!", show_alert=True)
-        return
-
-    price = character['price']
-    current_balance = user.get("balance", 0)
-
-    if current_balance < price:
-        await callback_query.answer(
-            f"🌠 You need {price - current_balance} more Star Coins to claim this legend!",
-            show_alert=True
-        )
-        return
-
-    # Deduct and update user
-    new_balance = current_balance - price
-    character_data = {
-        "_id": ObjectId(),
-        "img_url": character["img_url"],
-        "name": character["name"],
-        "anime": character["anime"],
-        "rarity": character["rarity"],
-        "id": character["id"]
-    }
-
-    user.setdefault("characters", []).append(character_data)
-    await user_collection.update_one(
-        {"id": user_id},
-        {"$set": {"balance": new_balance, "characters": user["characters"]}}
-    )
-
-    # Popup confirmation
-    await callback_query.answer("✅ Payment Successfully Received! Check your DMs.", show_alert=True)
-
-    # Send DM with waifu info
-    try:
-        await client.send_photo(
-            chat_id=user_id,
-            photo=character["img_url"],
-            caption=(
-                "╔══════════════════════╗\n"
-                "   ✨ **ＰＡＹＭＥＮＴ ＲＥＣＥＩＶＥＤ** ✨\n"
-                "╚══════════════════════╝\n\n"
-                f"🎀 You claimed: **{character['name']}**\n"
-                f"🌌 From: {character['anime']}\n"
-                f"💎 Rarity: {character['rarity']}\n\n"
-                "💖 Thanks for shopping in **ɢᴏᴊᴏ ᴄᴀᴛᴄʜᴇʀ ʙᴏᴛ**!\n"
-                "✨ Your waifu has been added to your collection!"
-            )
-        )
-    except:
-        await callback_query.message.reply("⚠ Could not DM you! Please start the bot privately.")
-
-
-# --- Next Item ---
-@app.on_callback_query(filters.regex("^next$"))
-async def next_item(client, callback_query):
+# --- Navigation Handler (Next + Prev) ---
+@app.on_callback_query(filters.regex("^(next|prev)$"))
+async def navigate_items(client, callback_query):
     user_id = callback_query.from_user.id
     state = user_data.get(user_id, {})
 
@@ -149,8 +96,13 @@ async def next_item(client, callback_query):
         return
 
     current_index = state.get("current_index", 0)
-    next_index = (current_index + 1) % len(characters)
-    character = characters[next_index]
+
+    if callback_query.data == "next":
+        new_index = (current_index + 1) % len(characters)
+    else:  # prev
+        new_index = (current_index - 1) % len(characters)
+
+    character = characters[new_index]
 
     caption_message = (
         f"🌟 **Explore the Cosmic Bazaar!** 🌟\n\n"
@@ -158,26 +110,46 @@ async def next_item(client, callback_query):
         f"**Realm:** {character['anime']}\n"
         f"**Legend Tier:** {character['rarity']}\n"
         f"**Cost:** {character['price']} Star Coins\n"
+        f"**Stock:** {character['stock']}\n"
         f"**ID:** {character['id']}\n"
         f"✨ Summon Epic Legends to Your Collection! ✨"
     )
 
     keyboard = [
         [
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{next_index}"),
-            InlineKeyboardButton("ɴᴇxᴛ ʟᴇɢᴇɴᴅ ➝", callback_data="next")
-        ]
+            InlineKeyboardButton("⬅ ᴘʀᴇᴠ", callback_data="prev"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"buy_{new_index}"),
+            InlineKeyboardButton("ɴᴇxᴛ ➝", callback_data="next")
+        ],
+        [InlineKeyboardButton("❌ ᴄʟᴏꜱᴇ", callback_data="close")]
     ]
 
-    await callback_query.message.edit_media(
-        media=InputMediaPhoto(media=character['img_url'], caption=caption_message),
-        reply_markup=InlineKeyboardMarkup(keyboard)
-    )
+    # ✅ Detect media type (photo/video)
+    if character['img_url'].endswith((".mp4", ".MP4")):
+        await callback_query.message.edit_media(
+            media=InputMediaVideo(media=character['img_url'], caption=caption_message),
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
+    else:
+        await callback_query.message.edit_media(
+            media=InputMediaPhoto(media=character['img_url'], caption=caption_message),
+            reply_markup=InlineKeyboardMarkup(keyboard)
+        )
 
-    user_data[user_id]["current_index"] = next_index
+    user_data[user_id]["current_index"] = new_index
     await callback_query.answer()
 
 
+# --- Close Button ---
+@app.on_callback_query(filters.regex("^close$"))
+async def close_shop(client, callback_query):
+    try:
+        await callback_query.message.delete()
+    except:
+        await callback_query.answer("❌ Unable to close message!", show_alert=True)
+
+
+# --- Add Shop ---
 @app.on_message(filters.command("addshop"))
 @require_power("add_character")
 async def add_to_shop(client, message):
@@ -199,7 +171,7 @@ async def add_to_shop(client, message):
         return await message.reply("🚫 This legend doesn't exist in the Cosmos!")
 
     character["price"] = price
-    character["stock"] = stock  # ✅ stock system
+    character["stock"] = stock
 
     await shops_collection.insert_one(character)
 
@@ -210,14 +182,13 @@ async def add_to_shop(client, message):
     )
 
 
+# --- Buy Character ---
 @app.on_callback_query(filters.regex(r"^buy_\d+$"))
 async def buy_character(client, callback_query):
     user_id = callback_query.from_user.id
     current_index = int(callback_query.data.split("_")[1])
 
-    characters_cursor = shops_collection.find()
-    characters = await characters_cursor.to_list(length=None)
-
+    characters = await shops_collection.find().to_list(length=None)
     if current_index >= len(characters):
         return await callback_query.answer("🚫 This legend has vanished from the Bazaar!", show_alert=True)
 
@@ -254,7 +225,7 @@ async def buy_character(client, callback_query):
         "id": character["id"]
     }
 
-    user["characters"].append(character_data)
+    user.setdefault("characters", []).append(character_data)
     await user_collection.update_one(
         {"id": user_id},
         {"$set": {"balance": new_balance, "characters": user["characters"]}}
@@ -270,18 +241,30 @@ async def buy_character(client, callback_query):
     # ✅ Popup
     await callback_query.answer("✅ Payment Successfully Received!", show_alert=True)
 
-    # ✅ DM user with waifu
+    # ✅ DM user with waifu (photo/video support)
     try:
-        await client.send_photo(
-            chat_id=user_id,
-            photo=character["img_url"],
-            caption=(
-                f"✨ ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ✨\n\n"
-                f"🌸 **{character['name']}** from *{character['anime']}* "
-                f"(Rarity: {character['rarity']}) is now in your collection!\n\n"
-                f"🛒 ɢᴏᴊᴏ ᴄᴀᴛᴄʜᴇʀ ʙᴏᴛ"
+        if character['img_url'].endswith((".mp4", ".MP4")):
+            await client.send_video(
+                chat_id=user_id,
+                video=character["img_url"],
+                caption=(
+                    f"✨ ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ✨\n\n"
+                    f"🌸 **{character['name']}** from *{character['anime']}* "
+                    f"(Rarity: {character['rarity']}) is now in your collection!\n\n"
+                    f"🛒 ɢᴏᴊᴏ ᴄᴀᴛᴄʜᴇʀ ʙᴏᴛ"
+                )
             )
-        )
+        else:
+            await client.send_photo(
+                chat_id=user_id,
+                photo=character["img_url"],
+                caption=(
+                    f"✨ ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ✨\n\n"
+                    f"🌸 **{character['name']}** from *{character['anime']}* "
+                    f"(Rarity: {character['rarity']}) is now in your collection!\n\n"
+                    f"🛒 ɢᴏᴊᴏ ᴄᴀᴛᴄʜᴇʀ ʙᴏᴛ"
+                )
+            )
     except Exception:
-        pass
+        await callback_query.message.reply("⚠ Could not DM you! Please start the bot privately.")
         
