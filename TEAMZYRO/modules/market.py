@@ -278,10 +278,6 @@ async def add_to_market(client, message):
     if not character:
         return await message.reply("🚫 That character ID doesn't exist.")
 
-    rarity = int(character.get("rarity", 0)) if str(character.get("rarity", "0")).isdigit() else 0
-    if rarity < 6:
-        return await message.reply("🚫 Market only accepts waifus with rarity 6 or higher.")
-
     character_copy = dict(character)
     character_copy["price"] = price
     if character_copy.get("amv_url") and not character_copy.get("video_url"):
@@ -289,6 +285,6 @@ async def add_to_market(client, message):
 
     await markets_collection.insert_one(character_copy)
     await message.reply(
-        f"🎉 {character_copy.get('name')} has been added to the Market for {price} Star Coins!"
+        f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
     )
     
