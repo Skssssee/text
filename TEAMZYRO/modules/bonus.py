@@ -4,9 +4,6 @@ from pyrogram import Client, filters, types as t
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
-# Must-join group/channel ID
-MUST_JOIN = -1002792716047   # 👈 tumhari group id
-
 # Bonus amounts
 DAILY_COINS = 100
 WEEKLY_COINS = 1500   # weekly bonus
@@ -30,20 +27,6 @@ async def bonus_menu(_, message: t.Message):
 @bot.on_callback_query()
 async def bonus_handler(_, query: t.CallbackQuery):
     user_id = query.from_user.id
-
-    # Must-join check
-    try:
-        member = await bot.get_chat_member(MUST_JOIN, user_id)
-        if member.status in ["left", "kicked"]:
-            return await query.answer(
-                "🚨 You must join the required group to claim your bonus!",
-                show_alert=True
-            )
-    except Exception:
-        return await query.answer(
-            "🚨 You must join the required group to claim your bonus!",
-            show_alert=True
-        )
 
     # Get user data or create if not exists
     user = await user_collection.find_one({"id": user_id})
