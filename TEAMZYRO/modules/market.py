@@ -120,18 +120,16 @@ async def edit_market_item(message, character, caption_message, keyboard):
         LOGGER.warning("edit_market_item fallback triggered: %s", e)
 
 # callback: next
-@app.on_callback_query(filters.regex(r"^market_next_\d+$"))
-async def market_next(client, callback_query):
-    user_id = callback_query.from_user.id
-    passed_index = int(callback_query.data.split("_")[-1])
+@app.on_callback_query(filters.regex(r"^market_prev_\d+$"))
+async def market_prev(client, callback_query):
+    current_index = int(callback_query.data.split("_")[-1])  # USE passed index
 
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await callback_query.answer("🌌 Market is empty!", show_alert=True)
 
-    current_index = user_data.get(user_id, {}).get("current_index", passed_index)
-    next_index = (current_index + 1) % len(characters)
-    character = characters[next_index]
+    prev_index = (current_index - 1) % len(characters)
+    character = characters[prev_index]
 
     caption_message = (
         f"🌟 **Sunday Market** 🌟\n\n"
@@ -145,14 +143,13 @@ async def market_next(client, callback_query):
 
     keyboard = [
         [
-            InlineKeyboardButton("Prev", callback_data=f"market_prev_{next_index}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{next_index}"),
-            InlineKeyboardButton("Next", callback_data=f"market_next_{next_index}"),
+            InlineKeyboardButton("Prev", callback_data=f"market_prev_{prev_index}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{prev_index}"),
+            InlineKeyboardButton("Next", callback_data=f"market_next_{prev_index}"),
         ]
     ]
 
     await edit_market_item(callback_query.message, character, caption_message, keyboard)
-    user_data[user_id] = {"current_index": next_index}
     await callback_query.answer()
 
 # callback: prev
@@ -190,6 +187,7 @@ async def market_prev(client, callback_query):
     await edit_market_item(callback_query.message, character, caption_message, keyboard)
     user_data[user_id] = {"current_index": prev_index}
     await callback_query.answer()
+    
 
 # callback: buy
 @app.on_callback_query(filters.regex(r"^market_buy_\d+$"))
