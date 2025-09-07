@@ -44,37 +44,36 @@ async def show_market(client, message):
     if not characters:
         return await message.reply("🌌 The Market is empty! No rare waifus available right now.")
 
-    current_index = 0
-    character = characters[current_index]
+    current = characters[0]
 
     caption = (
         f"🌟 **Welcome to the Sunday Market!** 🌟\n\n"
-        f"**Name:** {character.get('name')}\n"
-        f"**Anime:** {character.get('anime')}\n"
-        f"**Rarity:** {character.get('rarity')}\n"
-        f"**Price:** {character.get('price')} Star Coins\n"
-        f"**ID:** {character.get('id')}\n\n"
+        f"**Name:** {current.get('name')}\n"
+        f"**Anime:** {current.get('anime')}\n"
+        f"**Rarity:** {current.get('rarity')}\n"
+        f"**Price:** {current.get('price')} Star Coins\n"
+        f"**ID:** {current.get('id')}\n\n"
         "Use the buttons below to buy or browse waifus."
     )
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{current_index}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{current_index}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{current_index}"),
+            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{current['_id']}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{current['_id']}"),
+            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{current['_id']}"),
         ]
     ]
 
     try:
-        if character.get("video_url"):
+        if current.get("video_url"):
             await message.reply_video(
-                video=character["video_url"],
+                video=current["video_url"],
                 caption=caption,
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
         else:
             await message.reply_photo(
-                photo=character["img_url"],
+                photo=current["img_url"],
                 caption=caption,
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
@@ -97,20 +96,24 @@ async def edit_market_item(message, character, caption, keyboard):
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
     except Exception:
-        # fallback for text-only messages
         await message.edit_caption(caption=caption, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
 # --- Market Next ---
-@app.on_callback_query(filters.regex(r"^market_next_\d+$"))
+@app.on_callback_query(filters.regex(r"^market_next_"))
 async def market_next(client, callback_query):
-    passed_index = int(callback_query.data.split("_")[-1])
+    char_oid = callback_query.data.split("_")[-1]
 
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await callback_query.answer("🌌 Market is empty!", show_alert=True)
 
-    next_index = (passed_index + 1) % len(characters)
+    ids = [str(c["_id"]) for c in characters]
+    if char_oid not in ids:
+        return await callback_query.answer("⚠️ This waifu is no longer available!", show_alert=True)
+
+    current_index = ids.index(char_oid)
+    next_index = (current_index + 1) % len(characters)
     character = characters[next_index]
 
     caption = (
@@ -125,9 +128,9 @@ async def market_next(client, callback_query):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{next_index}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{next_index}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{next_index}"),
+            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{character['_id']}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{character['_id']}"),
+            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{character['_id']}"),
         ]
     ]
 
@@ -136,15 +139,20 @@ async def market_next(client, callback_query):
 
 
 # --- Market Prev ---
-@app.on_callback_query(filters.regex(r"^market_prev_\d+$"))
+@app.on_callback_query(filters.regex(r"^market_prev_"))
 async def market_prev(client, callback_query):
-    passed_index = int(callback_query.data.split("_")[-1])
+    char_oid = callback_query.data.split("_")[-1]
 
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await callback_query.answer("🌌 Market is empty!", show_alert=True)
 
-    prev_index = (passed_index - 1) % len(characters)
+    ids = [str(c["_id"]) for c in characters]
+    if char_oid not in ids:
+        return await callback_query.answer("⚠️ This waifu is no longer available!", show_alert=True)
+
+    current_index = ids.index(char_oid)
+    prev_index = (current_index - 1) % len(characters)
     character = characters[prev_index]
 
     caption = (
@@ -159,9 +167,9 @@ async def market_prev(client, callback_query):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{prev_index}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{prev_index}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{prev_index}"),
+            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{character['_id']}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{character['_id']}"),
+            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{character['_id']}"),
         ]
     ]
 
@@ -170,19 +178,18 @@ async def market_prev(client, callback_query):
 
 
 # --- Market Buy ---
-@app.on_callback_query(filters.regex(r"^market_buy_\d+$"))
+@app.on_callback_query(filters.regex(r"^market_buy_"))
 async def market_buy(client, callback_query):
     user_id = callback_query.from_user.id
-    index = int(callback_query.data.split("_")[-1])
+    char_oid = callback_query.data.split("_")[-1]
 
     if not is_ist_sunday():
         return await callback_query.answer("*Market is closed. Opens every Sunday!*", show_alert=True)
 
-    characters = await markets_collection.find().to_list(length=None)
-    if index >= len(characters):
-        return await callback_query.answer("🚫 This waifu is no longer available!", show_alert=True)
+    character = await markets_collection.find_one({"_id": ObjectId(char_oid)})
+    if not character:
+        return await callback_query.answer("🚫 This waifu has already been bought!", show_alert=True)
 
-    character = characters[index]
     user = await user_collection.find_one({"id": user_id})
     if not user:
         return await callback_query.answer("🚫 You need to register first!", show_alert=True)
@@ -195,10 +202,9 @@ async def market_buy(client, callback_query):
             f"🌠 You need {price - balance} more Star Coins to buy this waifu!", show_alert=True
         )
 
-    # Deduct balance and add character
     new_balance = balance - price
     user_chars = user.get("characters", [])
-    character_data = {
+    user_chars.append({
         "_id": ObjectId(),
         "img_url": character.get("img_url"),
         "video_url": character.get("video_url"),
@@ -206,12 +212,14 @@ async def market_buy(client, callback_query):
         "anime": character.get("anime"),
         "rarity": character.get("rarity"),
         "id": character.get("id"),
-    }
-    user_chars.append(character_data)
+    })
 
     await user_collection.update_one(
         {"id": user_id}, {"$set": {"balance": new_balance, "characters": user_chars}}
     )
+
+    # 🔥 Remove from market
+    await markets_collection.delete_one({"_id": ObjectId(char_oid)})
 
     tag_img = random.choice(MARKET_TAG_IMAGES)
     dm_text = (
@@ -220,34 +228,20 @@ async def market_buy(client, callback_query):
         "Thank you for shopping at the Sunday Market. ✨"
     )
 
-    dm_sent = True
     try:
         if character.get("video_url"):
             await client.send_video(chat_id=user_id, video=character["video_url"], caption=dm_text)
-            await client.send_photo(chat_id=user_id, photo=tag_img, caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
+            await client.send_photo(chat_id=user_id, photo=tag_img,
+                                    caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
         else:
             await client.send_photo(chat_id=user_id, photo=character.get("img_url"), caption=dm_text)
-            await client.send_photo(chat_id=user_id, photo=tag_img, caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
+            await client.send_photo(chat_id=user_id, photo=tag_img,
+                                    caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
     except Exception as e:
         LOGGER.warning("Failed to DM user after purchase: %s", e)
-        dm_sent = False
 
-    # Show popup notification
-    await callback_query.answer(
-        "Payment Successful 🎉\nCheck bot DM to see your collection!",
-        show_alert=True
-    )
-
-    # Optional: also send message in chat
-    if dm_sent:
-        await callback_query.message.reply_text(
-            f"🎉 {character.get('name')} has been added to your collection! Check your DM for details.",
-            parse_mode="html"
-        )
-    else:
-        await callback_query.message.reply_text(
-            f"🎉 {character.get('name')} added to your collection. I couldn't DM you — please /start the bot so I can send the congratulations DM."
-        )
+    await callback_query.answer("Payment Successful 🎉\nCheck bot DM to see your collection!", show_alert=True)
+    await callback_query.message.edit_caption("✅ This waifu has been sold and removed from the Market.")
 
 
 # --- /add_market command ---
@@ -273,8 +267,8 @@ async def add_to_market(client, message):
     if character_copy.get("amv_url") and not character_copy.get("video_url"):
         character_copy["video_url"] = character_copy.get("amv_url")
 
-    # Insert into market and reply to user
     await markets_collection.insert_one(character_copy)
     await message.reply(
         f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
-    )
+)
+    
