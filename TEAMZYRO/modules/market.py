@@ -1,9 +1,7 @@
 import random
-from datetime import datetime, timedelta
 from bson import ObjectId
 from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMediaPhoto, InputMediaVideo
-
 from TEAMZYRO import app, db, user_collection, collection, LOGGER
 
 markets_collection = db["market"]
@@ -13,12 +11,6 @@ MARKET_TAG_IMAGES = [
     "https://files.catbox.moe/syanmk.jpg",
     "https://files.catbox.moe/xokoit.jpg",
 ]
-
-# --- Helper: Check if it's Sunday IST ---
-def is_ist_sunday():
-    now_utc = datetime.utcnow()
-    ist_now = now_utc + timedelta(hours=5, minutes=30)
-    return ist_now.weekday() == 6  # Sunday
 
 # --- Helper: Edit market item message ---
 async def edit_market_item(message, character, caption, keyboard):
@@ -40,9 +32,6 @@ async def edit_market_item(message, character, caption, keyboard):
 # --- /market command ---
 @app.on_message(filters.command(["market", "hmarket", "hmarketmenu"]))
 async def show_market(client, message):
-    if not is_ist_sunday():
-        return await message.reply("*Market is closed. Opens every Sunday!*")
-
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await message.reply("🌌 The Market is empty! No rare waifus available right now.")
@@ -50,7 +39,7 @@ async def show_market(client, message):
     current = characters[0]
 
     caption = (
-        f"🌟 **Welcome to the Sunday Market!** 🌟\n\n"
+        f"🌟 **Welcome to the Market!** 🌟\n\n"
         f"**Name:** {current.get('name')}\n"
         f"**Anime:** {current.get('anime')}\n"
         f"**Rarity:** {current.get('rarity')}\n"
@@ -86,10 +75,10 @@ async def show_market(client, message):
         await message.reply(caption, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-# --- Next/Prev buttons are same as before, just include stock in caption ---
+# --- Market Next / Prev helpers ---
 def market_caption(character):
     return (
-        f"🌟 **Sunday Market** 🌟\n\n"
+        f"🌟 **Market** 🌟\n\n"
         f"**Name:** {character.get('name')}\n"
         f"**Anime:** {character.get('anime')}\n"
         f"**Rarity:** {character.get('rarity')}\n"
@@ -158,9 +147,6 @@ async def market_buy(client, callback_query):
     user_id = callback_query.from_user.id
     char_oid = callback_query.data.split("_")[-1]
 
-    if not is_ist_sunday():
-        return await callback_query.answer("*Market is closed. Opens every Sunday!*", show_alert=True)
-
     character = await markets_collection.find_one({"_id": ObjectId(char_oid)})
     if not character:
         return await callback_query.answer("🚫 This waifu has already been bought!", show_alert=True)
@@ -209,7 +195,7 @@ async def market_buy(client, callback_query):
     dm_text = (
         f"🎉 Congratulations! 🎉\n\n"
         f"You've just added **{character.get('name')}** (Rarity: {character.get('rarity')}) to your collection!\n\n"
-        "Thank you for shopping at the Sunday Market. ✨"
+        "Thank you for shopping at the Market. ✨"
     )
 
     try:
@@ -218,7 +204,7 @@ async def market_buy(client, callback_query):
         else:
             await client.send_photo(chat_id=user_id, photo=character.get("img_url"), caption=dm_text)
         await client.send_photo(chat_id=user_id, photo=tag_img,
-                                caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ ɪɴ ˹ 𝐆ᴏᴊᴏ ꭙ 𝐂ᴀᴛᴄʜᴇʀ ˼!")
+                                caption="ᴛʜᴀɴᴋꜱ ꜰᴏʀ ꜱʜᴏᴘᴘɪɴɢ!")
     except Exception as e:
         LOGGER.warning("Failed to DM user after purchase: %s", e)
 
@@ -257,5 +243,5 @@ async def add_to_market(client, message):
     await markets_collection.insert_one(character_copy)
     await message.reply(
         f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins! Stock: {stock}"
-    )
+        )
     
