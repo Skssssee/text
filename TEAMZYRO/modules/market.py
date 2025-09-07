@@ -34,6 +34,7 @@ def is_ist_sunday():
     ist_now = now_utc + timedelta(hours=5, minutes=30)
     return ist_now.weekday() == 6  # Sunday
 
+
 # --- /market command ---
 @app.on_message(filters.command(["market", "hmarket", "hmarketmenu"]))
 async def show_market(client, message):
@@ -58,9 +59,9 @@ async def show_market(client, message):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{current['_id']}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{current['_id']}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{current['_id']}"),
+            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{str(current['_id'])}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{str(current['_id'])}"),
+            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{str(current['_id'])}"),
         ]
     ]
 
@@ -108,7 +109,7 @@ async def market_next(client, callback_query):
     if not characters:
         return await callback_query.answer("🌌 Market is empty!", show_alert=True)
 
-    ids = [str(c["_id"]) for c in characters]
+    ids = [str(c["_id"]) for c in characters]  # ✅ force string conversion
     if char_oid not in ids:
         return await callback_query.answer("⚠️ This waifu is no longer available!", show_alert=True)
 
@@ -128,9 +129,9 @@ async def market_next(client, callback_query):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{character['_id']}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{character['_id']}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{character['_id']}"),
+            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{str(character['_id'])}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{str(character['_id'])}"),
+            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{str(character['_id'])}"),
         ]
     ]
 
@@ -167,9 +168,9 @@ async def market_prev(client, callback_query):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{character['_id']}"),
-            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{character['_id']}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{character['_id']}"),
+            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{str(character['_id'])}"),
+            InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{str(character['_id'])}"),
+            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{str(character['_id'])}"),
         ]
     ]
 
@@ -250,7 +251,7 @@ async def market_buy(client, callback_query):
 async def add_to_market(client, message):
     args = message.text.split()[1:]
     if len(args) != 2:
-        return await message.reply("🌌 Usage: /add_market <id> <price>")
+        return await message.reply("🌌 Usage: /add_market [id] [price]")
 
     character_id, price = args
     try:
@@ -270,5 +271,4 @@ async def add_to_market(client, message):
     await markets_collection.insert_one(character_copy)
     await message.reply(
         f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
-)
-    
+    )
