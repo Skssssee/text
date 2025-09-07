@@ -2,6 +2,7 @@ from TEAMZYRO import *
 from pyrogram import Client, filters
 from pyrogram.types import Message
 import html, random
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # --- Balance Helper ---
 async def get_balance(user_id):
@@ -42,6 +43,8 @@ async def balance(client: Client, message: Message):
         has_spoiler=True   # 👈 photo bhi spoiler me hoga
     )
 
+
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 
 # --- PAY COMMAND ---
 @app.on_message(filters.command("pay"))
@@ -112,7 +115,7 @@ async def pay(client: Client, message: Message):
 
 # --- CALLBACK HANDLER ---
 @app.on_callback_query(filters.regex(r"^pay_"))
-async def pay_callback(client, callback_query):
+async def pay_callback(client: Client, callback_query):
     try:
         data = callback_query.data.split(":")
         action = data[0]          # "pay_confirm" or "pay_cancel"
@@ -174,7 +177,7 @@ async def pay_callback(client, callback_query):
         print(f"PAY CALLBACK ERROR: {e}")
 
 
-# --- KILL COMMAND (unchanged) ---
+
 @app.on_message(filters.command("kill"))
 @require_power("VIP")
 async def kill_handler(client, message):
@@ -246,6 +249,7 @@ async def kill_handler(client, message):
         print(f"Error in /kill command: {e}")
         await message.reply_text("An error occurred while processing the request. Please try again later.")
         
+
 
 
 
