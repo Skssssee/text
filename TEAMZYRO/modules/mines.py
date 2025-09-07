@@ -83,11 +83,10 @@ async def start_mines(client, message):
         f"🎮 Mines Game Started!\nBet: {bet}\nBombs: {bombs}\nMultiplier: 1.00x",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
-
 # --- Tile click handler ---
-@bot.on_callback_query(filters.regex(r"^mines_tile:"))
+@bot.on_callback_query(filters.regex(r"^mines_tile:.*"))
 async def tap_tile(client, cq):
-    await cq.answer()
+    await cq.answer("Tile selected ✅")  # feedback to user
     try:
         _, user_id_str, pos_str = cq.data.split(":")
         user_id = int(user_id_str)
@@ -107,7 +106,7 @@ async def tap_tile(client, cq):
 
     game["clicked"].append(pos)
 
-    # Hit a mine → game over
+    # --- Mine case ---
     if pos in game["mine_positions"]:
         await delete_game(user_id)
         keyboard = []
@@ -127,6 +126,30 @@ async def tap_tile(client, cq):
             f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
+
+    # --- Safe click ---
+    game["multiplier"] = round(game["multiplier"] + 0.05, 2)
+    potential_win = math.floor(game["bet"] * game["multiplier"])
+    await save_game(user_id, game)
+
+    # Update board
+    keyboard = []
+    for i in range(5):
+        row = []
+        for j in range(5):
+            idx = i*5+j
+            if idx in game["clicked"]:
+                row.append(InlineKeyboardButton("✅", callback_data="mines_ignore"))
+            else:
+                row.append(InlineKeyboardButton("❓", callback_data=f"mines_tile:{user_id}:{idx}"))
+        keyboard.append(row)
+    keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"mines_cashout:{user_id}")])
+
+    await cq.message.edit_text(
+        f"🎮 Mines Game\nBet: {game['bet']}\nBombs: {game['bombs']}\nMultiplier: {game['multiplier']:.2f}x\nPotential Win: {potential_win}",
+        reply_markup=InlineKeyboardMarkup(keyboard)
+    )
+
 
     # Safe click → multiplier increase
     game["multiplier"] = round(game["multiplier"] + 0.05, 2)
