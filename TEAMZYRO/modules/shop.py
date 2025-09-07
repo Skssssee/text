@@ -156,7 +156,7 @@ async def add_to_shop(client, message):
     args = message.text.split()[1:]
 
     if len(args) != 3:
-        return await message.reply("🌌 Usage: /addshop <id> <price> <stock>")
+        return await message.reply("🌌 Usage: /addshop [id] [price] [stock]")
 
     character_id, price, stock = args
 
