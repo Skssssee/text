@@ -10,7 +10,8 @@ active_questions = {}  # user_id: {"answer": str, "bet": int, "reward": int, "ms
 # --- Add Question ---
 @app.on_message(filters.command("add_que"))
 async def add_question(client, message):
-    if message.from_user.id not in SUDO_USERS:
+    user_id = message.from_user.id
+    if user_id not in SUDO_USERS:
         return await message.reply_text("❌ You are not allowed to add questions.")
 
     try:
@@ -39,7 +40,6 @@ async def add_question(client, message):
     except Exception as e:
         await message.reply_text(f"❌ Error: {e}")
 
-
 # --- Play Question ---
 @app.on_message(filters.command("que"))
 async def play_question(client, message):
@@ -50,16 +50,22 @@ async def play_question(client, message):
         return await message.reply_text("❌ Usage: /que [bet_amount]")
 
     bet_amount = int(args[1])
+
+    # Fetch user
     user = await user_collection.find_one({"id": user_id})
-    if not user or user.get("balance", 0) < bet_amount:
+    if not user:
+        return await message.reply_text("⚠ You don't have a profile yet.")
+    if user.get("balance", 0) < bet_amount:
         return await message.reply_text("❌ You don't have enough coins.")
 
-    # Pick random question
-    q_list = await questions_collection.aggregate([{"$sample": {"size": 1}}]).to_list(length=1)
+    # Fetch random question
+    q_list = await questions_collection.find().to_list(length=None)
     if not q_list:
         return await message.reply_text("⚠ No questions available. Admin must add some.")
 
-    q = q_list[0]
+    import random
+    q = random.choice(q_list)
+
     question, correct_answer, reward = q["question"], q["answer"], q["coins"]
 
     # Deduct bet
@@ -103,7 +109,7 @@ async def play_question(client, message):
                 f"⌛ Time's up! Correct answer: {correct_answer}\n💸 You lost {bet_amount} coins."
             )
 
-    asyncio.ensure_future(countdown())  # ✅ fix here
+    asyncio.create_task(countdown())  # ✅ create_task is preferred
 
 # --- Answer Command ---
 @app.on_message(filters.command("ans"))
@@ -132,4 +138,4 @@ async def answer_question(client, message):
         )
 
     del active_questions[user_id]
-
+    
