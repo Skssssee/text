@@ -30,7 +30,7 @@ async def edit_market_item(message, character, caption, keyboard):
 
 
 # --- /market command ---
-@app.on_message(filters.command(["market", "hmarket", "hmarketmenu"]))
+@app.on_message(filters.command(["market", "hmarket", "hmarketmenu"], prefixes=["/", ".", "!", "?"]))
 async def show_market(client, message):
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
