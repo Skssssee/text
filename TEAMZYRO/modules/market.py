@@ -14,7 +14,8 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, InputMedi
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from TEAMZYRO import *
-from TEAMZYRO import market_collection
+
+markets_collection = db["market"]
 
 
 # helper: Indian Sunday check (IST = UTC +5:30)
