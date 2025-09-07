@@ -66,9 +66,9 @@ async def show_market(client, message):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{current_index}"),
+            InlineKeyboardButton("Prev", callback_data=f"market_prev_{current_index}"),
             InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{current_index}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{current_index}"),
+            InlineKeyboardButton("Next", callback_data=f"market_next_{current_index}"),
         ]
     ]
 
@@ -91,7 +91,6 @@ async def show_market(client, message):
 
     user_data[user_id] = {"current_index": current_index}
 
-
 # helper to edit market item
 async def edit_market_item(message, character, caption_message, keyboard):
     try:
@@ -105,10 +104,20 @@ async def edit_market_item(message, character, caption_message, keyboard):
                 InputMediaPhoto(media=character["img_url"], caption=caption_message),
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
-    except Exception:
-        # fallback to caption edit
-        await message.edit_caption(caption=caption_message, reply_markup=InlineKeyboardMarkup(keyboard))
-
+    except Exception as e:
+        try:
+            # fallback to caption edit (if media exists)
+            await message.edit_caption(
+                caption=caption_message,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        except Exception:
+            # final fallback for non-media messages
+            await message.edit_text(
+                text=caption_message,
+                reply_markup=InlineKeyboardMarkup(keyboard),
+            )
+        LOGGER.warning("edit_market_item fallback triggered: %s", e)
 
 # callback: next
 @app.on_callback_query(filters.regex(r"^market_next_\d+$"))
@@ -136,16 +145,15 @@ async def market_next(client, callback_query):
 
     keyboard = [
         [
-            InlineKeyboardButton("◀️ Prev", callback_data=f"market_prev_{next_index}"),
+            InlineKeyboardButton("Prev", callback_data=f"market_prev_{next_index}"),
             InlineKeyboardButton("ᴄʟᴀɪᴍ ɴᴏᴡ!", callback_data=f"market_buy_{next_index}"),
-            InlineKeyboardButton("Next ▶️", callback_data=f"market_next_{next_index}"),
+            InlineKeyboardButton("Next", callback_data=f"market_next_{next_index}"),
         ]
     ]
 
     await edit_market_item(callback_query.message, character, caption_message, keyboard)
     user_data[user_id] = {"current_index": next_index}
     await callback_query.answer()
-
 
 # callback: prev
 @app.on_callback_query(filters.regex(r"^market_prev_\d+$"))
@@ -182,7 +190,6 @@ async def market_prev(client, callback_query):
     await edit_market_item(callback_query.message, character, caption_message, keyboard)
     user_data[user_id] = {"current_index": prev_index}
     await callback_query.answer()
-
 
 # callback: buy
 @app.on_callback_query(filters.regex(r"^market_buy_\d+$"))
@@ -257,37 +264,5 @@ async def market_buy(client, callback_query):
         await callback_query.message.reply_text(
             f"🎉 {character.get('name')} added to your collection. "
             "I couldn't DM you — please /start the bot so I can send the congratulations DM."
-        )
-
-
-# /add_market command
-@app.on_message(filters.command("add_market"))
-@require_power("add_character")
-async def add_to_market(client, message):
-    args = message.text.split()[1:]
-    if len(args) != 2:
-        return await message.reply("🌌 Usage: /add_market <id> <price>")
-
-    character_id, price = args
-    try:
-        price = int(price)
-    except ValueError:
-        return await message.reply("🚫 Price must be a number.")
-
-    character = await collection.find_one({"id": character_id})
-    if not character:
-        return await message.reply("🚫 That character ID doesn't exist.")
-
-    rarity = int(character.get("rarity", 0)) if str(character.get("rarity", "0")).isdigit() else 0
-    if rarity < 6:
-        return await message.reply("🚫 Market only accepts waifus with rarity 6 or higher.")
-
-    character_copy = dict(character)
-    character_copy["price"] = price
-    if character_copy.get("amv_url") and not character_copy.get("video_url"):
-        character_copy["video_url"] = character_copy.get("amv_url")
-
-    await markets_collection.insert_one(character_copy)
-    await message.reply(
-        f"🎉 {character_copy.get('name')} has been added to the Market for {price} Star Coins!"
-        )
+    )
+        
