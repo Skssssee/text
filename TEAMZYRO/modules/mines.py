@@ -1,25 +1,26 @@
 import random
 import math
 import asyncio
-from pyrogram import filters
+from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
+# Store active games
 active_games = {}
 
-# Start Mines
+# --- Start Mines ---
 @bot.on_message(filters.command("mines"))
 async def start_mines(client, message):
     user_id = message.from_user.id
     args = message.text.split()
-    
+
     if len(args) < 3:
         return await message.reply("Usage: /mines [coins] [bombs]")
 
     try:
         bet = int(args[1])
         bombs = int(args[2])
-    except:
+    except ValueError:
         return await message.reply("⚠ Invalid numbers")
 
     if bombs < 2 or bombs > 20:
@@ -30,10 +31,10 @@ async def start_mines(client, message):
     if balance < bet:
         return await message.reply("🚨 Not enough coins")
 
-    # deduct bet
+    # Deduct bet
     await user_collection.update_one({"id": user_id}, {"$inc": {"balance": -bet}}, upsert=True)
 
-    # create game
+    # Create game
     mine_positions = random.sample(range(25), bombs)
     active_games[user_id] = {
         "bet": bet,
@@ -43,11 +44,11 @@ async def start_mines(client, message):
         "multiplier": 1.0
     }
 
-    # make keyboard
-    keyboard = []
-    for i in range(5):
-        row = [InlineKeyboardButton("❓", callback_data=f"tile:{user_id}:{i*5+j}") for j in range(5)]
-        keyboard.append(row)
+    # Build keyboard
+    keyboard = [
+        [InlineKeyboardButton("❓", callback_data=f"tile:{user_id}:{i*5+j}") for j in range(5)]
+        for i in range(5)
+    ]
     keyboard.append([InlineKeyboardButton("💸 Cash Out", callback_data=f"cashout:{user_id}")])
 
     await message.reply(
@@ -56,12 +57,15 @@ async def start_mines(client, message):
     )
 
 
-# Tile click
+# --- Tile click handler ---
 @bot.on_callback_query(filters.regex(r"^tile:(\d+):(\d+)$"))
 async def tap_tile(client, cq):
-    user_id, pos = cq.data.split(":")[1:]
-    user_id = int(user_id)
-    pos = int(pos)
+    try:
+        _, user_id_str, pos_str = cq.data.split(":")
+        user_id = int(user_id_str)
+        pos = int(pos_str)
+    except Exception:
+        return await cq.answer("⚠ Invalid button!", show_alert=True)
 
     if cq.from_user.id != user_id:
         return await cq.answer("This is not your game!", show_alert=True)
@@ -75,10 +79,9 @@ async def tap_tile(client, cq):
 
     game["clicked"].append(pos)
 
-    # mine hit → game over + reveal board
+    # Hit a mine → game over
     if pos in game["mine_positions"]:
         del active_games[user_id]
-
         keyboard = []
         for i in range(5):
             row = []
@@ -91,17 +94,16 @@ async def tap_tile(client, cq):
                 else:
                     row.append(InlineKeyboardButton("❎", callback_data="ignore"))
             keyboard.append(row)
-
         return await cq.message.edit_text(
             f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.",
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
 
-    # safe click → multiplier increase
+    # Safe click → multiplier increase
     game["multiplier"] += 0.05
     potential_win = math.floor(game["bet"] * game["multiplier"])
 
-    # update board
+    # Update keyboard
     keyboard = []
     for i in range(5):
         row = []
@@ -120,7 +122,7 @@ async def tap_tile(client, cq):
     )
 
 
-# Cashout with animation
+# --- Cashout handler with animation ---
 @bot.on_callback_query(filters.regex(r"^cashout:(\d+)$"))
 async def cashout(client, cq):
     user_id = int(cq.matches[0].group(1))
@@ -136,29 +138,23 @@ async def cashout(client, cq):
     user = await user_collection.find_one({"id": user_id})
     new_balance = user.get("balance", 0)
 
-    # --- Animation frames (coin buildup) ---
-    try:
-        frames = [
-            f"💸 Cashing out...",
-            f"💸 Cashing out... 💰",
-            f"💸 Cashing out... 💰💰",
-            f"💸 Cashing out... 💰💰💰",
-            f"💸 Cashing out... 💰💰💰💰",
-            f"💸 Cashing out... 💰💰💰💰💰"
-        ]
-        # Play frames (small sleeps to simulate animation)
-        for frame in frames:
-            # edit message (ignore if message not modified)
-            try:
-                await cq.message.edit_text(frame)
-            except Exception:
-                pass
-            await asyncio.sleep(0.5)
-    except Exception:
-        # if anything goes wrong with animation, continue to final result
-        pass
+    # Animation frames
+    frames = [
+        f"💸 Cashing out...",
+        f"💸 Cashing out... 💰",
+        f"💸 Cashing out... 💰💰",
+        f"💸 Cashing out... 💰💰💰",
+        f"💸 Cashing out... 💰💰💰💰",
+        f"💸 Cashing out... 💰💰💰💰💰"
+    ]
+    for frame in frames:
+        try:
+            await cq.message.edit_text(frame)
+        except Exception:
+            pass
+        await asyncio.sleep(0.5)
 
-    # reveal board after animation
+    # Reveal board
     keyboard = []
     for i in range(5):
         row = []
@@ -172,14 +168,13 @@ async def cashout(client, cq):
                 row.append(InlineKeyboardButton("❎", callback_data="ignore"))
         keyboard.append(row)
 
-    # final result edit
     await cq.message.edit_text(
         f"✅ Cashed out!\nWon: {earned} coins\nMultiplier: {game['multiplier']:.2f}x\nBalance: {new_balance}",
         reply_markup=InlineKeyboardMarkup(keyboard)
     )
 
 
-# ✅ Ignore button handler
+# --- Ignore button handler ---
 @bot.on_callback_query(filters.regex("^ignore$"))
 async def ignore_button(client, cq):
     await cq.answer()  # no alert, no response
