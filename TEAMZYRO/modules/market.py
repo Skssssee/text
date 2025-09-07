@@ -256,7 +256,7 @@ async def market_buy(client, callback_query):
 async def add_to_market(client, message):
     args = message.text.split()[1:]
     if len(args) != 2:
-        return await message.reply("🌌 Usage: /add_market [id] [price]")
+        return await message.reply("🌌 Usage: /add_market <id> <price>")
 
     character_id, price = args
     try:
@@ -273,8 +273,11 @@ async def add_to_market(client, message):
     if character_copy.get("amv_url") and not character_copy.get("video_url"):
         character_copy["video_url"] = character_copy.get("amv_url")
 
+    # Insert into market and reply to user
     await markets_collection.insert_one(character_copy)
     await message.reply(
         f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
     )
-    
+
+
+                
