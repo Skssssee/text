@@ -22,46 +22,39 @@ from TEAMZYRO import *
 
 markets_collection = db["market"]
 
-# in-memory state
-user_data = {}
-
-# helper: Indian Sunday check (IST = UTC +5:30)
-def is_ist_sunday():
-    now_utc = datetime.utcnow()
-    ist_now = now_utc + timedelta(hours=5, minutes=30)
-    return ist_now.weekday() == 6  # Sunday
-
 MARKET_TAG_IMAGES = [
     "https://files.catbox.moe/shslw1.jpg",
     "https://files.catbox.moe/syanmk.jpg",
     "https://files.catbox.moe/xokoit.jpg",
 ]
 
-# /market command
+# --- Helper: Check if it's Sunday IST ---
+def is_ist_sunday():
+    now_utc = datetime.utcnow()
+    ist_now = now_utc + timedelta(hours=5, minutes=30)
+    return ist_now.weekday() == 6  # Sunday
+
+# --- /market command ---
 @app.on_message(filters.command(["market", "hmarket", "hmarketmenu"]))
 async def show_market(client, message):
-    user_id = message.from_user.id
-
     if not is_ist_sunday():
         return await message.reply("*Market is closed. Opens every Sunday!*")
 
-    characters_cursor = markets_collection.find()
-    characters = await characters_cursor.to_list(length=None)
-
+    characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await message.reply("🌌 The Market is empty! No rare waifus available right now.")
 
     current_index = 0
     character = characters[current_index]
 
-    caption_message = (
+    caption = (
         f"🌟 **Welcome to the Sunday Market!** 🌟\n\n"
         f"**Name:** {character.get('name')}\n"
         f"**Anime:** {character.get('anime')}\n"
         f"**Rarity:** {character.get('rarity')}\n"
         f"**Price:** {character.get('price')} Star Coins\n"
         f"**ID:** {character.get('id')}\n\n"
-        "Use the buttons below to buy or browse previous/next waifus."
+        "Use the buttons below to buy or browse waifus."
     )
 
     keyboard = [
@@ -76,55 +69,51 @@ async def show_market(client, message):
         if character.get("video_url"):
             await message.reply_video(
                 video=character["video_url"],
-                caption=caption_message,
+                caption=caption,
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
         else:
             await message.reply_photo(
                 photo=character["img_url"],
-                caption=caption_message,
+                caption=caption,
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
     except Exception as e:
         LOGGER.exception("Failed to send market media: %s", e)
-        await message.reply(caption_message, reply_markup=InlineKeyboardMarkup(keyboard))
-
-    user_data[user_id] = {"current_index": current_index}
+        await message.reply(caption, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-# helper to edit market item
-async def edit_market_item(message, character, caption_message, keyboard):
+# --- Helper to edit market item ---
+async def edit_market_item(message, character, caption, keyboard):
     try:
         if character.get("video_url"):
             await message.edit_media(
-                InputMediaVideo(media=character["video_url"], caption=caption_message),
+                InputMediaVideo(media=character["video_url"], caption=caption),
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
         else:
             await message.edit_media(
-                InputMediaPhoto(media=character["img_url"], caption=caption_message),
+                InputMediaPhoto(media=character["img_url"], caption=caption),
                 reply_markup=InlineKeyboardMarkup(keyboard),
             )
     except Exception:
-        # fallback to caption edit
-        await message.edit_caption(caption=caption_message, reply_markup=InlineKeyboardMarkup(keyboard))
+        # fallback for text-only messages
+        await message.edit_caption(caption=caption, reply_markup=InlineKeyboardMarkup(keyboard))
 
 
-# callback: next
+# --- Market Next ---
 @app.on_callback_query(filters.regex(r"^market_next_\d+$"))
 async def market_next(client, callback_query):
-    user_id = callback_query.from_user.id
     passed_index = int(callback_query.data.split("_")[-1])
 
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await callback_query.answer("🌌 Market is empty!", show_alert=True)
 
-    current_index = user_data.get(user_id, {}).get("current_index", passed_index)
-    next_index = (current_index + 1) % len(characters)
+    next_index = (passed_index + 1) % len(characters)
     character = characters[next_index]
 
-    caption_message = (
+    caption = (
         f"🌟 **Sunday Market** 🌟\n\n"
         f"**Name:** {character.get('name')}\n"
         f"**Anime:** {character.get('anime')}\n"
@@ -142,26 +131,23 @@ async def market_next(client, callback_query):
         ]
     ]
 
-    await edit_market_item(callback_query.message, character, caption_message, keyboard)
-    user_data[user_id] = {"current_index": next_index}
+    await edit_market_item(callback_query.message, character, caption, keyboard)
     await callback_query.answer()
 
 
-# callback: prev
+# --- Market Prev ---
 @app.on_callback_query(filters.regex(r"^market_prev_\d+$"))
 async def market_prev(client, callback_query):
-    user_id = callback_query.from_user.id
     passed_index = int(callback_query.data.split("_")[-1])
 
     characters = await markets_collection.find().to_list(length=None)
     if not characters:
         return await callback_query.answer("🌌 Market is empty!", show_alert=True)
 
-    current_index = user_data.get(user_id, {}).get("current_index", passed_index)
-    prev_index = (current_index - 1) % len(characters)
+    prev_index = (passed_index - 1) % len(characters)
     character = characters[prev_index]
 
-    caption_message = (
+    caption = (
         f"🌟 **Sunday Market** 🌟\n\n"
         f"**Name:** {character.get('name')}\n"
         f"**Anime:** {character.get('anime')}\n"
@@ -179,12 +165,11 @@ async def market_prev(client, callback_query):
         ]
     ]
 
-    await edit_market_item(callback_query.message, character, caption_message, keyboard)
-    user_data[user_id] = {"current_index": prev_index}
+    await edit_market_item(callback_query.message, character, caption, keyboard)
     await callback_query.answer()
 
 
-# callback: buy
+# --- Market Buy ---
 @app.on_callback_query(filters.regex(r"^market_buy_\d+$"))
 async def market_buy(client, callback_query):
     user_id = callback_query.from_user.id
@@ -210,6 +195,7 @@ async def market_buy(client, callback_query):
             f"🌠 You need {price - balance} more Star Coins to buy this waifu!", show_alert=True
         )
 
+    # Deduct balance and add character
     new_balance = balance - price
     user_chars = user.get("characters", [])
     character_data = {
@@ -246,21 +232,25 @@ async def market_buy(client, callback_query):
         LOGGER.warning("Failed to DM user after purchase: %s", e)
         dm_sent = False
 
+    # Show popup notification
+    await callback_query.answer(
+        "Payment Successful 🎉\nCheck bot DM to see your collection!",
+        show_alert=True
+    )
+
+    # Optional: also send message in chat
     if dm_sent:
-        await callback_query.answer("🎉 Purchase successful! Check your DM for details.")
         await callback_query.message.reply_text(
-            f"🎉 {character.get('name')} has been added to <a href='tg://user?id={user_id}'>your collection</a>.",
-            parse_mode="html",
+            f"🎉 {character.get('name')} has been added to your collection! Check your DM for details.",
+            parse_mode="html"
         )
     else:
-        await callback_query.answer("🎉 Purchased, but I couldn't DM you. Please /start the bot.", show_alert=True)
         await callback_query.message.reply_text(
-            f"🎉 {character.get('name')} added to your collection. "
-            "I couldn't DM you — please /start the bot so I can send the congratulations DM."
+            f"🎉 {character.get('name')} added to your collection. I couldn't DM you — please /start the bot so I can send the congratulations DM."
         )
 
 
-# /add_market command
+# --- /add_market command ---
 @app.on_message(filters.command("add_market"))
 @require_power("add_character")
 async def add_to_market(client, message):
@@ -286,5 +276,4 @@ async def add_to_market(client, message):
     await markets_collection.insert_one(character_copy)
     await message.reply(
         f"🎉 {character_copy.get('name')} has been added to the Market for {price} Coins!"
-    )
     
