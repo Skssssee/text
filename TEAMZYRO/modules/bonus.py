@@ -1,7 +1,7 @@
 import asyncio
 from datetime import datetime, timedelta
-from pyrogram import Client, filters, types as t
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram import filters
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message, CallbackQuery
 from TEAMZYRO import ZYRO as bot, user_collection
 
 # Must-join group/channel ID
@@ -11,9 +11,10 @@ MUST_JOIN = -1002792716047   # 👈 your group id
 DAILY_COINS = 100
 WEEKLY_COINS = 1500   # weekly bonus
 
+
 # /bonus command handler
 @bot.on_message(filters.command("bonus"))
-async def bonus_menu(_, message: t.Message):
+async def bonus_menu(_, message: Message):
     keyboard = InlineKeyboardMarkup(
         [
             [InlineKeyboardButton("🎁 Daily Claim", callback_data="daily_claim")],
@@ -27,9 +28,9 @@ async def bonus_menu(_, message: t.Message):
     )
 
 
-# Callback handler
-@bot.on_callback_query()
-async def bonus_handler(_, query: t.CallbackQuery):
+# Callback handler with filter
+@bot.on_callback_query(filters.regex("^(daily_claim|weekly_claim|close_bonus)$"))
+async def bonus_handler(_, query: CallbackQuery):
     user_id = query.from_user.id
 
     # Must-join check
@@ -51,7 +52,7 @@ async def bonus_handler(_, query: t.CallbackQuery):
     if not user:
         user = {
             "id": user_id,
-            "balance": 0,  # unified field
+            "balance": 0,
             "last_daily_claim": None,
             "last_weekly_claim": None,
         }
@@ -73,13 +74,9 @@ async def bonus_handler(_, query: t.CallbackQuery):
             {"id": user_id},
             {"$inc": {"balance": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
         )
-
-        # Fetch updated balance
         user = await user_collection.find_one({"id": user_id})
-        new_balance = user.get("balance", 0)
-
         return await query.answer(
-            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins\n💎 New Balance: {new_balance} coins",
+            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins\n💎 New Balance: {user['balance']} coins",
             show_alert=True
         )
 
@@ -100,17 +97,13 @@ async def bonus_handler(_, query: t.CallbackQuery):
             {"id": user_id},
             {"$inc": {"balance": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
         )
-
-        # Fetch updated balance
         user = await user_collection.find_one({"id": user_id})
-        new_balance = user.get("balance", 0)
-
         return await query.answer(
-            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins\n💎 New Balance: {new_balance} coins",
+            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins\n💎 New Balance: {user['balance']} coins",
             show_alert=True
         )
 
     # Close button
     elif query.data == "close_bonus":
         await query.message.delete()
-        return
+        
