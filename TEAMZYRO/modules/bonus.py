@@ -39,6 +39,10 @@ async def bonus_handler(_, query: t.CallbackQuery):
         }
         await user_collection.insert_one(user)
 
+    # Re-fetch to ensure fresh integer value
+    user = await user_collection.find_one({"id": user_id})
+    coins = int(user.get("coins", 0))
+
     # Daily claim
     if query.data == "daily_claim":
         last_daily = user.get("last_daily_claim")
@@ -51,12 +55,14 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
+        # Update coins
+        new_balance = coins + DAILY_COINS
         await user_collection.update_one(
             {"id": user_id},
-            {"$inc": {"coins": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
+            {"$set": {"coins": new_balance, "last_daily_claim": datetime.utcnow()}}
         )
         return await query.answer(
-            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins",
+            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins\n\n🔹 Balance: {new_balance}",
             show_alert=True
         )
 
@@ -73,12 +79,14 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
+        # Update coins
+        new_balance = coins + WEEKLY_COINS
         await user_collection.update_one(
             {"id": user_id},
-            {"$inc": {"coins": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
+            {"$set": {"coins": new_balance, "last_weekly_claim": datetime.utcnow()}}
         )
         return await query.answer(
-            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins",
+            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins\n\n🔹 Balance: {new_balance}",
             show_alert=True
         )
 
