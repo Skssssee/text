@@ -28,7 +28,7 @@ async def bonus_menu(_, message: t.Message):
 async def bonus_handler(_, query: t.CallbackQuery):
     user_id = query.from_user.id
 
-    # Ensure user exists
+    # Ensure user exists (always integer coins)
     user = await user_collection.find_one({"id": user_id})
     if not user:
         user = {
@@ -55,19 +55,20 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
-        # Update using $inc (safe increment)
+        # Update using $inc (safe increment with integer)
         await user_collection.update_one(
             {"id": user_id},
             {
-                "$inc": {"coins": DAILY_COINS},
+                "$inc": {"coins": int(DAILY_COINS)},
                 "$set": {"last_daily_claim": datetime.utcnow()}
             }
         )
 
         # Fetch updated balance
         updated = await user_collection.find_one({"id": user_id})
+        balance = int(updated.get("coins", 0))
         return await query.answer(
-            f"✅ Daily Bonus claimed!\n💰 +{DAILY_COINS} coins\n\n🔹 Balance: {updated['coins']}",
+            f"✅ Daily Bonus claimed!\n💰 +{DAILY_COINS} coins\n\n🔹 Balance: {balance}",
             show_alert=True
         )
 
@@ -84,19 +85,20 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
-        # Update using $inc (safe increment)
+        # Update using $inc (safe increment with integer)
         await user_collection.update_one(
             {"id": user_id},
             {
-                "$inc": {"coins": WEEKLY_COINS},
+                "$inc": {"coins": int(WEEKLY_COINS)},
                 "$set": {"last_weekly_claim": datetime.utcnow()}
             }
         )
 
         # Fetch updated balance
         updated = await user_collection.find_one({"id": user_id})
+        balance = int(updated.get("coins", 0))
         return await query.answer(
-            f"✅ Weekly Bonus claimed!\n💰 +{WEEKLY_COINS} coins\n\n🔹 Balance: {updated['coins']}",
+            f"✅ Weekly Bonus claimed!\n💰 +{WEEKLY_COINS} coins\n\n🔹 Balance: {balance}",
             show_alert=True
         )
 
