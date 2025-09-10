@@ -121,8 +121,7 @@ async def tap_tile(client, cq):
                 else:
                     row.append(InlineKeyboardButton("❎", callback_data="mines_ignore"))
             keyboard.append(row)
-        keyboard.append([InlineKeyboardButton("❌ Close", callback_data=f"mines_close:{user_id}")])
-
+        
         return await cq.message.edit_text(
             f"💥 Boom! Mine hit.\nLost: {game['bet']} coins.",
             reply_markup=InlineKeyboardMarkup(keyboard)
