@@ -307,8 +307,9 @@ async def _cleanup_pending_task():
             pending_confirm.pop(k, None)
         await asyncio.sleep(30)
 
-@app.on_startup()
-async def _on_started(client):
-    client.loop.create_task(_cleanup_pending_task())
-    LOGGER.info("Store module started and cleanup task running.")
-    
+@app.on_message(filters.private)  # ya filters.command("start")
+async def _on_started(client, message):
+    if not hasattr(client, "_cleanup_started"):
+        client.loop.create_task(_cleanup_pending_task())
+        client._cleanup_started = True
+        LOGGER.info("✅ Store module cleanup task running.")
