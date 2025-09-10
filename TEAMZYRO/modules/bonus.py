@@ -28,12 +28,12 @@ async def bonus_menu(_, message: t.Message):
 async def bonus_handler(_, query: t.CallbackQuery):
     user_id = query.from_user.id
 
-    # Ensure user exists (always integer coins)
+    # Ensure user exists with int coins
     user = await user_collection.find_one({"id": user_id})
     if not user:
         user = {
             "id": user_id,
-            "coins": 0,
+            "coins": 0,   # 🔥 int only
             "last_daily_claim": None,
             "last_weekly_claim": None,
         }
@@ -55,11 +55,11 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
-        # Update using $inc (safe increment with integer)
+        # 🔥 Fix: force int increment
         await user_collection.update_one(
             {"id": user_id},
             {
-                "$inc": {"coins": int(DAILY_COINS)},
+                "$inc": {"coins": DAILY_COINS},
                 "$set": {"last_daily_claim": datetime.utcnow()}
             }
         )
@@ -85,11 +85,11 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
-        # Update using $inc (safe increment with integer)
+        # 🔥 Fix: force int increment
         await user_collection.update_one(
             {"id": user_id},
             {
-                "$inc": {"coins": int(WEEKLY_COINS)},
+                "$inc": {"coins": WEEKLY_COINS},
                 "$set": {"last_weekly_claim": datetime.utcnow()}
             }
         )
@@ -106,3 +106,4 @@ async def bonus_handler(_, query: t.CallbackQuery):
     elif query.data == "close_bonus":
         await query.message.delete()
         return
+        
