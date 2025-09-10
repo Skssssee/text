@@ -14,18 +14,20 @@ async def delete_message(chat_id, message_id, context):
         print(f"Error deleting message: {e}")
 
 RARITY_WEIGHTS = {
-    "⚪️ Low": (40, True),              # Most frequent
-    "🟠 Medium": (20, True),           # Less frequent than Low
-    "🔴 High": (12, True),             # Rare but obtainable
-    "🎩 Special Edition": (8, True),   # Very rare
-    "🪽 Elite Edition": (6, True),     # Extremely rare
-    "🪐 Exclusive": (4, True),         # Ultra-rare
-    "💞 Valentine": (2, False),         # Special Valentine's rarity
-    "🎃 Halloween": (2, False),        # Halloween themed rarity (DISABLED)
-    "❄️ Winter": (1.5, False),          # Winter themed rarity
-    "🏖 Summer": (1.2, False),          # Summer-themed rarity
-    "🎗 Royal": (0.5, False),           # Royal rarity (Bid only)
-    "💸 Luxury Edition": (0.5, False)   # Luxury Edition (Shop only)
+    "🟣 Common": (40, True),              # Most frequent
+    "🟠 Rare": (20, True),           # Less frequent than Low
+    "🟡 Legendary": (12, True),             # Rare but obtainable
+    "💮 Mythic": (8, True),   # Very rare
+    "⚜️ Devine": (6, True),     # Extremely rare
+    "⚡️ Crossverse": (4, True), # Ultra-rare
+    "✨ Cataphract" : (1.2, True),
+    "🪞 Supreme" : (0.5, True),
+#    "💞 Valentine": (2, False),         # Special Valentine's rarity
+ #   "🎃 Halloween": (2, False),        # Halloween themed rarity (DISABLED)
+ #   "❄️ Winter": (1.5, False),          # Winter themed rarity
+ #   "🏖 Summer": (1.2, False),          # Summer-themed rarity
+  #  "🎗 Royal": (0.5, False),           # Royal rarity (Bid only)
+ #   "💸 Luxury Edition": (0.5, False)   # Luxury Edition (Shop only)
 }
 
 async def send_image(update: Update, context: CallbackContext) -> None:
