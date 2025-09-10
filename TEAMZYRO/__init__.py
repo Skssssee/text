@@ -33,17 +33,17 @@ CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "gojo_waifu")
 SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002792716047")
 mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu2:Gojowaifu2@cluster0.uvox90s.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
-MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/+8KU5ZDxvZyw0N2U1")
+MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/hug_your_waifu")
 
 # Modified to support both image and video URLs
-START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/3kd6oq.jpg,https://files.catbox.moe/nkg2ly.jpg,https://files.catbox.moe/0zvwpt.jpg,https://files.catbox.moe/z7d8i6.jpg").split(',')
+START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/68jx8u.jpg").split(',')
 
 PHOTO_URL = [
-    os.getenv("PHOTO_URL_1", "https://files.catbox.moe/f5njbm.jpg"),
-    os.getenv("PHOTO_URL_2", "https://files.catbox.moe/3saw6n.jpg")
+    os.getenv("PHOTO_URL_1", "https://files.catbox.moe/68jx8u.jpg"),
+    os.getenv("PHOTO_URL_2", "https://files.catbox.moe/68jx8u.jpg")
 ]
 
-STATS_IMG = ["https://files.catbox.moe/0zvwpt.jpg"]
+STATS_IMG = ["https://files.catbox.moe/68jx8u.jpg"]
 
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/GOJO_NOBITA_II")
 UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/GOJO_SUPPORT_GROUP_II")
@@ -52,7 +52,7 @@ OWNER_ID = int(os.getenv("OWNER_ID", "6356015122"))
 
 # --------------------- TELEGRAM BOT CONFIGURATION -----------------------
 command_filter = f.create(lambda _, __, message: message.text and message.text.startswith("/"))
-application = Application.builder().token(TOKEN).build()
+application = Applicahttps://files.catbox.moe/68jx8u.jpgtion.builder().token(TOKEN).build()
 ZYRO = Client("Shivu", api_id=api_id, api_hash=api_hash, bot_token=TOKEN)
 
 # -------------------------- DATABASE SETUP ------------------------------
