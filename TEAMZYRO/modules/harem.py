@@ -198,14 +198,51 @@ async def harem_callback(client, callback_query):
 @app.on_message(filters.command("hmode"))
 async def hmode_handler(client, message):
     user_id = message.from_user.id
+
+    # --- Case 1: User typed "/hmode rarityname" ---
+    args = message.text.split(maxsplit=1)
+    if len(args) > 1:
+        rarity_input = args[1].strip().capitalize()  # normalize input
+        # Check if rarity exists in rarity_map2
+        if rarity_input in rarity_map2:
+            await user_collection.update_one(
+                {"id": user_id},
+                {"$set": {"filter_rarity": rarity_input}},
+                upsert=True
+            )
+            await message.reply_text(
+                f"✅ Rarity filter set to: <b>{rarity_input}</b>\n\n"
+                "Open your collection with /harem to see filtered results.",
+                parse_mode=enums.ParseMode.HTML
+            )
+            return
+        elif rarity_input.lower() == "all":
+            await user_collection.update_one(
+                {"id": user_id},
+                {"$set": {"filter_rarity": None}},
+                upsert=True
+            )
+            await message.reply_text(
+                "✅ Rarity filter cleared. Showing all rarities.\n\n"
+                "Open your collection with /harem to see filtered results."
+            )
+            return
+        else:
+            await message.reply_text(
+                f"❌ Invalid rarity: <b>{rarity_input}</b>\n\n"
+                f"Available: {', '.join(rarity_map2.keys())}, All",
+                parse_mode=enums.ParseMode.HTML
+            )
+            return
+
+    # --- Case 2: No rarity typed, show buttons ---
     keyboard = []
     row = []
-    # rarity_map2 se rarity aur emoji nikalna
     for i, (rarity, emoji) in enumerate(rarity_map2.items(), 1):
         row.append(
             InlineKeyboardButton(
                 emoji,
-                callback_data=f"set_rarity|{user_id}|{rarity}"
+                callback_data=f"set_rarity:{user_id}:{rarity}"  # fixed format
             )
         )
         if i % 4 == 0:
@@ -214,9 +251,9 @@ async def hmode_handler(client, message):
     if row:
         keyboard.append(row)
 
-    # "All" option add
+    # Add "All" option
     keyboard.append([
-        InlineKeyboardButton("All", callback_data=f"set_rarity|{user_id}|None")
+        InlineKeyboardButton("All", callback_data=f"set_rarity:{user_id}:None")
     ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -226,27 +263,26 @@ async def hmode_handler(client, message):
     )
 
 
-@app.on_callback_query(filters.regex(r"^set_rarity\|"))
+@app.on_callback_query(filters.regex(r"^set_rarity:"))
 async def set_rarity_callback(client, callback_query):
     try:
-        # Callback split
-        _, user_id, filter_rarity = callback_query.data.split('|')
+        _, user_id, filter_rarity = callback_query.data.split(':')
         user_id = int(user_id)
         filter_rarity = None if filter_rarity == "None" else filter_rarity
 
-        # ⚠️ Fix: har user sirf apna filter change kar paye
+        # Ensure only the owner can use
         if callback_query.from_user.id != user_id:
             await callback_query.answer("⚠️ You can only change your own rarity filter!", show_alert=True)
             return
 
-        # DB update (user ke liye rarity save karna)
+        # Update DB
         await user_collection.update_one(
             {"id": user_id},
             {"$set": {"filter_rarity": filter_rarity}},
             upsert=True
         )
 
-        # Confirmation edit but keep buttons so they can change again
+        # Confirmation edit (buttons stay intact)
         if filter_rarity:
             await callback_query.message.edit_text(
                 f"✅ Rarity filter set to: <b>{filter_rarity}</b>\n\n"
@@ -261,7 +297,6 @@ async def set_rarity_callback(client, callback_query):
                 reply_markup=callback_query.message.reply_markup
             )
 
-        # Confirmation popup
         await callback_query.answer(
             f"Filter applied: {filter_rarity if filter_rarity else 'All'}"
         )
