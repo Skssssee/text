@@ -30,7 +30,7 @@ api_hash = os.getenv("API_HASH", "1d66f21cd828dc22b80e3750719bd94a")
 TOKEN = os.getenv("TOKEN", "")
 GLOG = os.getenv("GLOG", "gojo_waifu")
 CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "gojo_waifu")
-SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1002792716047")
+SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1003091789166")
 mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu2:Gojowaifu2@cluster0.uvox90s.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
 MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/hug_your_waifu")
@@ -45,8 +45,8 @@ PHOTO_URL = [
 
 STATS_IMG = ["https://files.catbox.moe/68jx8u.jpg"]
 
-SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/GOJO_NOBITA_II")
-UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/GOJO_SUPPORT_GROUP_II")
+SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/hug_your_waifu")
+UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/hug_your_waifu")
 SUDO = list(map(int, os.getenv("SUDO", "7553434931").split(',')))
 OWNER_ID = int(os.getenv("OWNER_ID", "6356015122"))
 
