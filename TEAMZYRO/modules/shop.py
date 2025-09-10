@@ -1,4 +1,4 @@
-# store_module_working.py
+# store_module_fixed_final.py
 import uuid
 import logging
 from datetime import datetime, timedelta
@@ -18,13 +18,14 @@ from pyrogram.types import (
 from TEAMZYRO import app, db, user_collection, require_power, collection
 
 # ---------------- Config ----------------
-ADMIN_LOG_CHAT_ID = -1002891249230  # Optional: admin log channel
+ADMIN_LOG_CHAT_ID = -1002891249230
 Store_collection = db["store"]
-user_state = {}         # user_id -> {"current_index": int, "shop_message_id": int}
+
+user_state = {}         # user_id -> {"current_index": int, "shop_message_id": int, "nonce": str}
 pending_confirm = {}    # nonce -> {"user_id": int, "index": int, "expires": datetime}
 
 logging.basicConfig(level=logging.INFO)
-LOGGER = logging.getLogger("store_module_working")
+LOGGER = logging.getLogger("store_module_fixed_final")
 
 # ---------------- Helpers ----------------
 def is_video_url(url: str) -> bool:
@@ -81,7 +82,8 @@ async def show_store(client, message):
     character = characters[current_index]
 
     caption = make_store_caption(character)
-    nonce = uuid.uuid4().hex[:8]  # short nonce
+    nonce = uuid.uuid4().hex[:8]
+
     keyboard = make_keyboard(current_index, nonce)
 
     try:
@@ -101,15 +103,15 @@ async def show_store(client, message):
         LOGGER.exception("Failed to send store item media: %s", e)
         return await message.reply_text("⚠️ Failed to display item (broken media).")
 
-    user_state[user_id] = {"current_index": current_index, "shop_message_id": sent.message_id}
+    # Save state with nonce
+    user_state[user_id] = {"current_index": current_index, "shop_message_id": sent.message_id, "nonce": nonce}
     pending_confirm[nonce] = {"user_id": user_id, "index": current_index, "expires": datetime.utcnow() + timedelta(minutes=2)}
 
-# ---------------- Single Callback Handler ----------------
+# ---------------- Callback Handler ----------------
 @app.on_callback_query()
 async def store_callbacks(client, cq):
     data = cq.data
     user_id = cq.from_user.id
-
     LOGGER.info(f"Callback received: {data} from user {user_id}")
 
     # ---------------- Prepare Buy ----------------
@@ -137,7 +139,6 @@ async def store_callbacks(client, cq):
         except Exception as e:
             LOGGER.exception("Failed to show confirm keyboard: %s", e)
             return await cq.answer("⚠️ Something went wrong.", show_alert=True)
-
         return await cq.answer()
 
     # ---------------- Confirm Buy ----------------
@@ -145,24 +146,31 @@ async def store_callbacks(client, cq):
         try:
             _, nonce = data.split(":")
             info = pending_confirm.get(nonce)
-            if not info: return await cq.answer("⚠️ Session expired.", show_alert=True)
-            if user_id != info["user_id"]: return await cq.answer("🚫 Only buyer can confirm.", show_alert=True)
-            if info["expires"] < datetime.utcnow(): pending_confirm.pop(nonce,None); return await cq.answer("⚠️ Session expired.", show_alert=True)
+            if not info:
+                return await cq.answer("⚠️ Session expired.", show_alert=True)
+            if user_id != info["user_id"]:
+                return await cq.answer("🚫 Only buyer can confirm.", show_alert=True)
+            if info["expires"] < datetime.utcnow():
+                pending_confirm.pop(nonce, None)
+                return await cq.answer("⚠️ Session expired.", show_alert=True)
 
             index = info["index"]
             await cleanup_expired_items()
             characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
-            if index >= len(characters): pending_confirm.pop(nonce,None); return await cq.answer("❌ No longer available.", show_alert=True)
+            if index >= len(characters):
+                pending_confirm.pop(nonce,None)
+                return await cq.answer("❌ No longer available.", show_alert=True)
 
             character = characters[index]
             quantity = character.get("quantity",1)
-            if quantity <=0:
+            if quantity <= 0:
                 await Store_collection.delete_one({"_id": character["_id"]})
                 pending_confirm.pop(nonce,None)
                 return await cq.answer("❌ SOLD OUT!", show_alert=True)
 
             user = await user_collection.find_one({"id": user_id})
             if not user: return await cq.answer("🚫 Register first.", show_alert=True)
+
             price = int(character.get("price",0))
             balance = int(user.get("balance",0))
             if balance < price: return await cq.answer(f"💸 Need {price-balance} more coins.", show_alert=True)
@@ -238,22 +246,23 @@ async def store_callbacks(client, cq):
             characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
             if not characters: return await cq.answer("🌌 No items left.", show_alert=True)
 
-            state = user_state.get(user_id,{"current_index":0})
+            state = user_state.get(user_id, {"current_index":0, "nonce": None})
             current_index = state.get("current_index",0)
             next_index = (current_index+1) % len(characters)
             char = characters[next_index]
 
             caption = make_store_caption(char)
             nonce = uuid.uuid4().hex[:8]
+
             keyboard = make_keyboard(next_index, nonce)
-
             if is_video_url(char["img_url"]):
-                await cq.message.edit_media(InputMediaVideo(media=char["img_url"],caption=caption), reply_markup=keyboard)
+                await cq.message.edit_media(InputMediaVideo(media=char["img_url"], caption=caption), reply_markup=keyboard)
             else:
-                await cq.message.edit_media(InputMediaPhoto(media=char["img_url"],caption=caption), reply_markup=keyboard)
+                await cq.message.edit_media(InputMediaPhoto(media=char["img_url"], caption=caption), reply_markup=keyboard)
 
-            user_state[user_id] = {"current_index": next_index, "shop_message_id": cq.message.message_id}
-            pending_confirm[nonce] = {"user_id": user_id, "index": next_index, "expires": datetime.utcnow()+timedelta(minutes=2)}
+            # Update state with new index + nonce
+            user_state[user_id] = {"current_index": next_index, "shop_message_id": cq.message.message_id, "nonce": nonce}
+            pending_confirm[nonce] = {"user_id": user_id, "index": next_index, "expires": datetime.utcnow() + timedelta(minutes=2)}
             await cq.answer()
         except Exception as e:
             LOGGER.exception("Next button failed: %s", e)
@@ -294,18 +303,9 @@ async def add_to_store_cmd(client, message):
         "img_url": character.get("img_url"),
         "name": character.get("name"),
         "anime": character.get("anime"),
-        "rarity": character.get("rarity"),
-        "id": character.get("id"),
-        "price": price,
-        "quantity": quantity,
-        "added_at": datetime.utcnow()
-    }
-    if expiry_minutes: shop_doc["expires_at"] = datetime.utcnow() + timedelta(minutes=expiry_minutes)
 
-    await Store_collection.insert_one(shop_doc)
-    await message.reply_text(f"✅ **{character.get('name')}** added to store for {price} coins. Stock: {quantity}.")
 
-# ---------------- Cleanup Task ----------------
+---------------- Cleanup Task ----------------
 async def _cleanup_pending_task():
     while True:
         now = datetime.utcnow()
@@ -321,3 +321,4 @@ async def _on_started(client, message):
         client._cleanup_started = True
         LOGGER.info("✅ Store module cleanup task running.")
         
+    
