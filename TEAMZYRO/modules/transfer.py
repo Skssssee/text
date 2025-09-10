@@ -50,7 +50,7 @@ async def transfer_collection(client: Client, message: Message):
     )
 
 # Step 2: Callback Handler
-@bot.on_callback_query(filters.regex(r"^transfer_(confirm|cancel|close)"))
+@bot.on_callback_query(filters.regex(r"^transfer_(confirm|cancel|close)(:.*)?$"))
 async def transfer_callback(client: Client, callback_query: CallbackQuery):
     data = callback_query.data.split(":")
     action = data[0].replace("transfer_", "")
