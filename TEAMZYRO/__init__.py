@@ -33,17 +33,17 @@ CHARA_CHANNEL_ID = os.getenv("CHARA_CHANNEL_ID", "gojo_waifu")
 SUPPORT_CHAT_ID = os.getenv("SUPPORT_CHAT_ID", "-1003091789166")
 mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu2:Gojowaifu2@cluster0.uvox90s.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
 
-MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/hug_your_waifu")
+MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/@hug_your_waifu")
 
 # Modified to support both image and video URLs
-START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/68jx8u.jpg").split(',')
+START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/68jx8u.jpg).split(',')
 
 PHOTO_URL = [
     os.getenv("PHOTO_URL_1", "https://files.catbox.moe/68jx8u.jpg"),
     os.getenv("PHOTO_URL_2", "https://files.catbox.moe/68jx8u.jpg")
 ]
 
-STATS_IMG = ["https://files.catbox.moe/68jx8u.jpg"]
+STATS_IMG = ["https://files.catbox.moe/0zvwpt.jpg"]
 
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/hug_your_waifu")
 UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/hug_your_waifu")
@@ -52,7 +52,7 @@ OWNER_ID = int(os.getenv("OWNER_ID", "6356015122"))
 
 # --------------------- TELEGRAM BOT CONFIGURATION -----------------------
 command_filter = f.create(lambda _, __, message: message.text and message.text.startswith("/"))
-application = Applicahttps://files.catbox.moe/68jx8u.jpgtion.builder().token(TOKEN).build()
+application = Application.builder().token(TOKEN).build()
 ZYRO = Client("Shivu", api_id=api_id, api_hash=api_hash, bot_token=TOKEN)
 
 # -------------------------- DATABASE SETUP ------------------------------
