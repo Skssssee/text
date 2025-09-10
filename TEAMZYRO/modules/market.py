@@ -1,5 +1,5 @@
 import urllib.request
-from TEAMZYRO import ZYRO as bot, db, user_collection
+from TEAMZYRO import ZYRO as bot, market_collection, user_collection
 import uuid
 import requests
 import random
@@ -21,10 +21,12 @@ market_collection = db["market"]
 user_data = {}
 market_data = {}
 
-@bot.on_message(filters.command(["market", "hmarket"]))
+
+# Show shop
+@bot.on_message(filters.command(["market", "shop"]))
 async def show_market(client, message):
     user_id = message.from_user.id
-    message_id = message.id
+    message_id = message.message_id
 
     items_cursor = market_collection.find()
     items = await items_cursor.to_list(length=None)
@@ -47,8 +49,10 @@ async def show_market(client, message):
     )
 
     keyboard = [
-        [InlineKeyboardButton("Buy Now!", callback_data=f"marketbuy_{current_index}"),
-         InlineKeyboardButton("Next Item", callback_data="marketnext")]
+        [
+            InlineKeyboardButton("Buy Now!", callback_data=f"marketbuy_{current_index}"),
+            InlineKeyboardButton("Next Item", callback_data="marketnext")
+        ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -68,6 +72,7 @@ async def show_market(client, message):
     market_data[user_id] = {"current_index": current_index, "market_message_id": message_id}
 
 
+# Buy item
 @bot.on_callback_query(filters.regex(r"^marketbuy_\d+$"))
 async def buy_market_item(client, callback_query):
     user_id = callback_query.from_user.id
@@ -121,7 +126,7 @@ async def buy_market_item(client, callback_query):
         "id": item["id"],
         "is_video": item.get("is_video", False)
     }
-    user["characters"].append(character_data)
+    user.setdefault("characters", []).append(character_data)
 
     await user_collection.update_one(
         {"id": user_id},
@@ -154,6 +159,7 @@ async def buy_market_item(client, callback_query):
         logging.error(f"Failed to send DM: {e}")
 
 
+# Next item
 @bot.on_callback_query(filters.regex("^marketnext$"))
 async def next_market_item(client, callback_query):
     user_id = callback_query.from_user.id
@@ -181,10 +187,11 @@ async def next_market_item(client, callback_query):
     )
 
     keyboard = [
-        [InlineKeyboardButton("Buy Now!", callback_data=f"marketbuy_{next_index}"),
-         InlineKeyboardButton("Next Item", callback_data="marketnext")]
+        [
+            InlineKeyboardButton("Buy Now!", callback_data=f"marketbuy_{next_index}"),
+            InlineKeyboardButton("Next Item", callback_data="marketnext")
+        ]
     ]
-
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     if item.get("is_video"):
@@ -200,47 +207,6 @@ async def next_market_item(client, callback_query):
 
     market_data[user_id]["current_index"] = next_index
     await callback_query.answer()
-
-
-@bot.on_message(filters.command("addmarket"))
-@require_power("add_character")
-async def add_to_market(client, message):
-    args = message.text.split()[1:]
-
-    if len(args) != 3:
-        await message.reply("🛒 Usage: /addmarket [id] [price] [quantity]")
-        return
-
-    character_id, price, qty = args
-
-    try:
-        price = int(price)
-        qty = int(qty)
-    except ValueError:
-        await message.reply("🚫 Price and Quantity must be numbers!")
-        return
-
-    character = await collection.find_one({"id": character_id})
-    if not character:
-        await message.reply("🚫 This character/AMV doesn't exist in DB!")
-        return
-
-    market_item = {
-        "id": character["id"],
-        "name": character["name"],
-        "anime": character["anime"],
-        "rarity": character["rarity"],
-        "url": character["img_url"] if "img_url" in character else character["video_url"],
-        "is_video": "video_url" in character,
-        "price": price,
-        "quantity": qty
-    }
-
-    await market_collection.insert_one(market_item)
-
-    await message.reply(
-        f"🎉 {character['name']} has been added to the Market for {price} ⭐ (x{qty} available)"
-  )
 
 @bot.on_message(filters.command("mymarket"))
 async def my_market_history(client, message):
