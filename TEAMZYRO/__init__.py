@@ -36,7 +36,7 @@ mongo_url = os.getenv("MONGO_URL", "mongodb+srv://Gojowaifu2:Gojowaifu2@cluster0
 MUSJ_JOIN = os.getenv("MUSJ_JOIN", "https://t.me/@hug_your_waifu")
 
 # Modified to support both image and video URLs
-START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/68jx8u.jpg).split(',')
+START_MEDIA = os.getenv("START_MEDIA", "https://files.catbox.moe/68jx8u.jpg").split(',')
 
 PHOTO_URL = [
     os.getenv("PHOTO_URL_1", "https://files.catbox.moe/68jx8u.jpg"),
