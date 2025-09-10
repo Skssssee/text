@@ -9,7 +9,7 @@ from pyrogram import enums
 from motor.motor_asyncio import AsyncIOMotorClient
 from datetime import datetime
 
-@app.on_message(filters.command(["guess", "protecc", "collect", "grab", "hunt"]))
+@app.on_message(filters.command(["guess", "protecc", "collect", "grab", "hunt","hug","catch"]))
 async def guess(client: Client, message: Message):
     chat_id = message.chat.id
     user_id = message.from_user.id
