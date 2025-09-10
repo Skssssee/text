@@ -4,6 +4,9 @@ from pyrogram import Client, filters, types as t
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
+# Must-join group/channel ID
+MUST_JOIN = -1002792716047   # 👈 tumhari group id
+
 # Bonus amounts
 DAILY_COINS = 100
 WEEKLY_COINS = 1500   # weekly bonus
@@ -28,20 +31,30 @@ async def bonus_menu(_, message: t.Message):
 async def bonus_handler(_, query: t.CallbackQuery):
     user_id = query.from_user.id
 
-    # Ensure user exists with int coins
+    # Must-join check
+    try:
+        member = await bot.get_chat_member(MUST_JOIN, user_id)
+        if member.status in ["left", "kicked"]:
+            return await query.answer(
+                "🚨 You must join the required group to claim your bonus!",
+                show_alert=True
+            )
+    except Exception:
+        return await query.answer(
+            "🚨 You must join the required group to claim your bonus!",
+            show_alert=True
+        )
+
+    # Get user data or create if not exists
     user = await user_collection.find_one({"id": user_id})
     if not user:
         user = {
             "id": user_id,
-            "coins": 0,   # 🔥 int only
+            "coins": 0,
             "last_daily_claim": None,
             "last_weekly_claim": None,
         }
         await user_collection.insert_one(user)
-
-    # Re-fetch fresh user data
-    user = await user_collection.find_one({"id": user_id})
-    coins = int(user.get("coins", 0))
 
     # Daily claim
     if query.data == "daily_claim":
@@ -55,20 +68,12 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
-        # 🔥 Fix: force int increment
         await user_collection.update_one(
             {"id": user_id},
-            {
-                "$inc": {"coins": DAILY_COINS},
-                "$set": {"last_daily_claim": datetime.utcnow()}
-            }
+            {"$inc": {"coins": DAILY_COINS}, "$set": {"last_daily_claim": datetime.utcnow()}}
         )
-
-        # Fetch updated balance
-        updated = await user_collection.find_one({"id": user_id})
-        balance = int(updated.get("coins", 0))
         return await query.answer(
-            f"✅ Daily Bonus claimed!\n💰 +{DAILY_COINS} coins\n\n🔹 Balance: {balance}",
+            f"✅ You successfully claimed your Daily Bonus!\n💰 +{DAILY_COINS} coins",
             show_alert=True
         )
 
@@ -85,20 +90,12 @@ async def bonus_handler(_, query: t.CallbackQuery):
                 show_alert=True
             )
 
-        # 🔥 Fix: force int increment
         await user_collection.update_one(
             {"id": user_id},
-            {
-                "$inc": {"coins": WEEKLY_COINS},
-                "$set": {"last_weekly_claim": datetime.utcnow()}
-            }
+            {"$inc": {"coins": WEEKLY_COINS}, "$set": {"last_weekly_claim": datetime.utcnow()}}
         )
-
-        # Fetch updated balance
-        updated = await user_collection.find_one({"id": user_id})
-        balance = int(updated.get("coins", 0))
         return await query.answer(
-            f"✅ Weekly Bonus claimed!\n💰 +{WEEKLY_COINS} coins\n\n🔹 Balance: {balance}",
+            f"✅ You successfully claimed your Weekly Bonus!\n💰 +{WEEKLY_COINS} coins",
             show_alert=True
         )
 
