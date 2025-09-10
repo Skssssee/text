@@ -318,7 +318,7 @@ async def add_to_store_cmd(client, message):
     )
 
 
----------------- Cleanup Task ----------------
+# ---------------- Cleanup Task ----------------
 async def _cleanup_pending_task():
     while True:
         now = datetime.utcnow()
