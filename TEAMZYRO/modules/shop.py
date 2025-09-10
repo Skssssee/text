@@ -1,4 +1,4 @@
-# shop_pro_module_fixed_v2.py
+# store_module_fixed.py
 import uuid
 import logging
 from datetime import datetime, timedelta
@@ -20,12 +20,12 @@ from TEAMZYRO import app, db, user_collection, require_power, collection
 # ---------------- Config ----------------
 ADMIN_LOG_CHAT_ID = -1002891249230 # Optional: admin log channel
 
-shops_collection = db["shops"]
+Store_collection = db["store"]  # new collection
 user_state = {}         # user_id -> {"current_index": int, "shop_message_id": int}
 pending_confirm = {}    # nonce -> {"user_id": int, "index": int, "expires": datetime}
 
 logging.basicConfig(level=logging.INFO)
-LOGGER = logging.getLogger("shop_pro_fixed_v2")
+LOGGER = logging.getLogger("store_module_fixed")
 
 # ---------------- Helpers ----------------
 def is_video_url(url: str) -> bool:
@@ -33,13 +33,13 @@ def is_video_url(url: str) -> bool:
 
 async def cleanup_expired_items():
     now = datetime.utcnow()
-    await shops_collection.delete_many({"expires_at": {"$lte": now}})
+    await Store_collection.delete_many({"expires_at": {"$lte": now}})
 
-def make_shop_caption(character: dict) -> str:
+def make_store_caption(character: dict) -> str:
     stock = character.get("quantity", 1)
     price = character.get("price", 0)
     return (
-        f"🌟 **Cosmic Bazaar** 🌟\n\n"
+        f"🌟 **Cosmic Store** 🌟\n\n"
         f"**Hero:** {character.get('name','Unknown')}\n"
         f"**Realm:** {character.get('anime','Unknown')}\n"
         f"**Legend Tier:** {character.get('rarity','Common')}\n"
@@ -53,10 +53,10 @@ def make_keyboard(index: int, nonce: str):
     return InlineKeyboardMarkup([
         [
             InlineKeyboardButton("💳 Claim Now", callback_data=f"prepare_buy:{index}:{nonce}"),
-            InlineKeyboardButton("➡️ Next", callback_data="next_shop")
+            InlineKeyboardButton("➡️ Next", callback_data="next_store")
         ],
         [
-            InlineKeyboardButton("❌ Close", callback_data="close_shop")
+            InlineKeyboardButton("❌ Close", callback_data="close_store")
         ]
     ])
 
@@ -68,22 +68,21 @@ def make_confirm_keyboard(nonce: str):
         ]
     ])
 
-# ---------------- Shop Command ----------------
-@app.on_message(filters.command(["shop", "hshopmenu", "hshop"]))
-async def show_shop(client, message):
+# ---------------- Store Command ----------------
+@app.on_message(filters.command(["store", "storemenu", "hstore"]))
+async def show_store(client, message):
     user_id = message.from_user.id
     await cleanup_expired_items()
 
-    characters_cursor = shops_collection.find().sort([("_id", 1)])
-    characters = await characters_cursor.to_list(length=None)
+    characters = await Store_collection.find().sort([("_id", 1)]).to_list(length=None)
     if not characters:
-        await message.reply_text("🌌 The Cosmic Bazaar is empty! No items available right now.")
+        await message.reply_text("🌌 The Cosmic Store is empty! No items available right now.")
         return
 
     current_index = 0
     character = characters[current_index]
 
-    caption = make_shop_caption(character)
+    caption = make_store_caption(character)
     nonce = uuid.uuid4().hex
     keyboard = make_keyboard(current_index, nonce)
 
@@ -101,7 +100,7 @@ async def show_shop(client, message):
                 reply_markup=keyboard
             )
     except Exception as e:
-        LOGGER.exception("Failed to send shop item media: %s", e)
+        LOGGER.exception("Failed to send store item media: %s", e)
         await message.reply_text("⚠️ Failed to display item (broken media).")
         return
 
@@ -148,7 +147,7 @@ async def buy_confirm_cb(client, callback_query):
 
     index = info["index"]
     await cleanup_expired_items()
-    characters = await shops_collection.find().sort([("_id", 1)]).to_list(length=None)
+    characters = await Store_collection.find().sort([("_id", 1)]).to_list(length=None)
     if index >= len(characters):
         pending_confirm.pop(nonce, None)
         return await callback_query.answer("❌ No longer available.", show_alert=True)
@@ -156,7 +155,7 @@ async def buy_confirm_cb(client, callback_query):
     character = characters[index]
     quantity = character.get("quantity",1)
     if quantity <=0:
-        await shops_collection.delete_one({"_id": character["_id"]})
+        await Store_collection.delete_one({"_id": character["_id"]})
         pending_confirm.pop(nonce,None)
         return await callback_query.answer("❌ SOLD OUT!", show_alert=True)
 
@@ -183,10 +182,10 @@ async def buy_confirm_cb(client, callback_query):
     )
 
     if quantity > 1:
-        await shops_collection.update_one({"_id": character["_id"]},{"$inc":{"quantity":-1}})
+        await Store_collection.update_one({"_id": character["_id"]},{"$inc":{"quantity":-1}})
         remaining = quantity-1
     else:
-        await shops_collection.delete_one({"_id": character["_id"]})
+        await Store_collection.delete_one({"_id": character["_id"]})
         remaining=0
 
     dm_caption = (
@@ -230,41 +229,48 @@ async def buy_cancel_cb(client, callback_query):
     try: await callback_query.message.edit_caption("❌ Purchase cancelled.", reply_markup=None)
     except: pass
 
-@app.on_callback_query(filters.regex(r"^next_shop$"))
-async def next_shop_cb(client, callback_query):
+@app.on_callback_query(filters.regex(r"^next_store$"))
+async def next_store_cb(client, callback_query):
     user_id = callback_query.from_user.id
     await cleanup_expired_items()
-    characters = await shops_collection.find().sort([("_id",1)]).to_list(length=None)
+    characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
     if not characters: return await callback_query.answer("🌌 No items left.", show_alert=True)
+
     state = user_state.get(user_id,{"current_index":0})
     current_index = state.get("current_index",0)
-    next_index = (current_index+1)%len(characters)
+    next_index = (current_index+1) % len(characters)
     char = characters[next_index]
-    caption = make_shop_caption(char)
+
+    caption = make_store_caption(char)
     nonce = uuid.uuid4().hex
     keyboard = make_keyboard(next_index, nonce)
+
     try:
-        if is_video_url(char["img_url"]): await callback_query.message.edit_media(InputMediaVideo(media=char["img_url"],caption=caption), reply_markup=keyboard)
-        else: await callback_query.message.edit_media(InputMediaPhoto(media=char["img_url"],caption=caption), reply_markup=keyboard)
-    except: await callback_query.message.edit_caption(caption, reply_markup=keyboard)
-    user_state[user_id] = {"current_index":next_index,"shop_message_id":callback_query.message.message_id}
-    pending_confirm[nonce] = {"user_id":user_id,"index":next_index,"expires":datetime.utcnow()+timedelta(minutes=2)}
+        if is_video_url(char["img_url"]):
+            await callback_query.message.edit_media(InputMediaVideo(media=char["img_url"],caption=caption), reply_markup=keyboard)
+        else:
+            await callback_query.message.edit_media(InputMediaPhoto(media=char["img_url"],caption=caption), reply_markup=keyboard)
+    except:
+        await callback_query.message.edit_caption(caption, reply_markup=keyboard)
+
+    user_state[user_id] = {"current_index": next_index, "shop_message_id": callback_query.message.message_id}
+    pending_confirm[nonce] = {"user_id": user_id, "index": next_index, "expires": datetime.utcnow()+timedelta(minutes=2)}
     await callback_query.answer()
 
-@app.on_callback_query(filters.regex(r"^close_shop$"))
-async def close_shop_cb(client, callback_query):
+@app.on_callback_query(filters.regex(r"^close_store$"))
+async def close_store_cb(client, callback_query):
     try: await callback_query.message.delete()
     except: pass
     user_state.pop(callback_query.from_user.id,None)
-    await callback_query.answer("Shop closed.", show_alert=False)
+    await callback_query.answer("Store closed.", show_alert=False)
 
-# ---------------- Add to Shop ----------------
-@app.on_message(filters.command("addshop"))
+# ---------------- Add to Store ----------------
+@app.on_message(filters.command("addstore"))
 @require_power("add_character")
-async def add_to_shop_cmd(client, message):
+async def add_to_store_cmd(client, message):
     args = message.text.split()[1:]
     if len(args) < 3:
-        return await message.reply_text("Usage: /addshop [id] [price] [quantity] [expiry_minutes]")
+        return await message.reply_text("Usage: /addstore [id] [price] [quantity] [expiry_minutes]")
 
     char_id = args[0]
     try:
@@ -288,26 +294,9 @@ async def add_to_shop_cmd(client, message):
         "added_at": datetime.utcnow()
     }
     if expiry_minutes: shop_doc["expires_at"] = datetime.utcnow() + timedelta(minutes=expiry_minutes)
-    await shops_collection.insert_one(shop_doc)
-    await message.reply_text(f"✅ **{character.get('name')}** added to shop for {price} coins. Stock: {quantity}.")
 
-# ---------------- Top Buyers Leaderboard ----------------
-@app.on_message(filters.command("topbuyers"))
-async def topbuyers_cmd(client, message):
-    cursor = user_collection.find().sort([("total_spent", -1)]).limit(10)
-    top = await cursor.to_list(length=10)
-    if not top: return await message.reply_text("No purchases yet.")
-
-    text = "🏆 **Top Buyers Leaderboard** 🏆\n\n"
-    buttons = []
-    for i, u in enumerate(top, start=1):
-        name = u.get("name") or u.get("username") or str(u.get("id"))
-        name = f"**{name}**"
-        spent = u.get("total_spent",0)
-        avatar = u.get("profile_pic")  # optional, if you store profile pics
-        text += f"{i}. {name} — Spent: {spent} coins\n"
-    keyboard = InlineKeyboardMarkup([[InlineKeyboardButton("❌ Close", callback_data="close_shop")]])
-    await message.reply_text(text, reply_markup=keyboard, disable_web_page_preview=True)
+    await Store_collection.insert_one(shop_doc)
+    await message.reply_text(f"✅ **{character.get('name')}** added to store for {price} coins. Stock: {quantity}.")
 
 # ---------------- Cleanup Task ----------------
 async def _cleanup_pending_task():
@@ -321,4 +310,5 @@ async def _cleanup_pending_task():
 @app.on_message()
 async def _on_started(client):
     client.loop.create_task(_cleanup_pending_task())
-    LOGGER.info("Shop module started and cleanup task running.")
+    LOGGER.info("Store module started and cleanup task running.")
+    
