@@ -200,42 +200,73 @@ async def hmode_handler(client, message):
     user_id = message.from_user.id
     keyboard = []
     row = []
+    # rarity_map2 se rarity aur emoji nikalna
     for i, (rarity, emoji) in enumerate(rarity_map2.items(), 1):
-        row.append(InlineKeyboardButton(emoji, callback_data=f"set_rarity:{user_id}:{rarity}"))
+        row.append(
+            InlineKeyboardButton(
+                emoji,
+                callback_data=f"set_rarity|{user_id}|{rarity}"
+            )
+        )
         if i % 4 == 0:
             keyboard.append(row)
             row = []
     if row:
         keyboard.append(row)
-    keyboard.append([InlineKeyboardButton("All", callback_data=f"set_rarity:{user_id}:None")])
+
+    # "All" option add
+    keyboard.append([
+        InlineKeyboardButton("All", callback_data=f"set_rarity|{user_id}|None")
+    ])
 
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await message.reply_text("Select a rarity to filter your harem:", reply_markup=reply_markup)
+    await message.reply_text(
+        "🎭 Select a rarity to filter your harem:",
+        reply_markup=reply_markup
+    )
 
-@app.on_callback_query(filters.regex(r"^set_rarity"))
+
+@app.on_callback_query(filters.regex(r"^set_rarity\|"))
 async def set_rarity_callback(client, callback_query):
     try:
-        _, user_id, filter_rarity = callback_query.data.split(':')
+        # Callback split
+        _, user_id, filter_rarity = callback_query.data.split('|')
         user_id = int(user_id)
-        filter_rarity = None if filter_rarity == 'None' else filter_rarity
+        filter_rarity = None if filter_rarity == "None" else filter_rarity
 
+        # ⚠️ Fix: har user sirf apna filter change kar paye
         if callback_query.from_user.id != user_id:
-            await callback_query.answer("It's not your Harem!", show_alert=True)
+            await callback_query.answer("⚠️ You can only change your own rarity filter!", show_alert=True)
             return
 
-        # Update the user's filter_rarity in the database
-        await user_collection.update_one({"id": user_id}, {"$set": {"filter_rarity": filter_rarity}}, upsert=True)
+        # DB update (user ke liye rarity save karna)
+        await user_collection.update_one(
+            {"id": user_id},
+            {"$set": {"filter_rarity": filter_rarity}},
+            upsert=True
+        )
 
-        # Edit the message to show which rarity is set and remove the buttons
+        # Confirmation edit but keep buttons so they can change again
         if filter_rarity:
-            await callback_query.message.edit_text(f"Rarity filter set to: **{filter_rarity}**")
+            await callback_query.message.edit_text(
+                f"✅ Rarity filter set to: <b>{filter_rarity}</b>\n\n"
+                "Open your collection with /harem to see filtered results.",
+                parse_mode=enums.ParseMode.HTML,
+                reply_markup=callback_query.message.reply_markup
+            )
         else:
-            await callback_query.message.edit_text("Rarity filter cleared. Showing all rarities.")
+            await callback_query.message.edit_text(
+                "✅ Rarity filter cleared. Showing all rarities.\n\n"
+                "Open your collection with /harem to see filtered results.",
+                reply_markup=callback_query.message.reply_markup
+            )
 
-        # Optionally, you can also send a confirmation message
-        await callback_query.answer(f"Rarity filter set to {filter_rarity if filter_rarity else 'All'}", show_alert=True)
+        # Confirmation popup
+        await callback_query.answer(
+            f"Filter applied: {filter_rarity if filter_rarity else 'All'}"
+        )
+
     except Exception as e:
         print(f"Error in set_rarity callback: {e}")
-
-
-
+        await callback_query.answer("❌ Error setting rarity filter", show_alert=True)
+        
