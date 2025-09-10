@@ -5,8 +5,8 @@ from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from TEAMZYRO import ZYRO as bot, user_collection
 
 # Bonus amounts
-DAILY_COINS = 100
-WEEKLY_COINS = 1500
+DAILY_COINS = 300
+WEEKLY_COINS = 1700
 
 # /bonus command
 @bot.on_message(filters.command("bonus"))
