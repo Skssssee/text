@@ -21,7 +21,7 @@ market_collection = db["market"]
 user_data = {}
 market_data = {}
 
-@app.on_message(filters.command(["market", "hmarket"]))
+@bot.on_message(filters.command(["market", "hmarket"]))
 async def show_market(client, message):
     user_id = message.from_user.id
     message_id = message.id
@@ -68,7 +68,7 @@ async def show_market(client, message):
     market_data[user_id] = {"current_index": current_index, "market_message_id": message_id}
 
 
-@app.on_callback_query(filters.regex(r"^marketbuy_\d+$"))
+@bot.on_callback_query(filters.regex(r"^marketbuy_\d+$"))
 async def buy_market_item(client, callback_query):
     user_id = callback_query.from_user.id
     current_index = int(callback_query.data.split("_")[1])
@@ -154,7 +154,7 @@ async def buy_market_item(client, callback_query):
         logging.error(f"Failed to send DM: {e}")
 
 
-@app.on_callback_query(filters.regex("^marketnext$"))
+@bot.on_callback_query(filters.regex("^marketnext$"))
 async def next_market_item(client, callback_query):
     user_id = callback_query.from_user.id
     user_state = market_data.get(user_id, {})
@@ -202,13 +202,13 @@ async def next_market_item(client, callback_query):
     await callback_query.answer()
 
 
-@app.on_message(filters.command("addmarket"))
+@bot.on_message(filters.command("addmarket"))
 @require_power("add_character")
 async def add_to_market(client, message):
     args = message.text.split()[1:]
 
     if len(args) != 3:
-        await message.reply("🛒 Usage: /addmarket <id> <price> <quantity>")
+        await message.reply("🛒 Usage: /addmarket [id] [price] [quantity]")
         return
 
     character_id, price, qty = args
@@ -242,7 +242,7 @@ async def add_to_market(client, message):
         f"🎉 {character['name']} has been added to the Market for {price} ⭐ (x{qty} available)"
   )
 
-@app.on_message(filters.command("mymarket"))
+@bot.on_message(filters.command("mymarket"))
 async def my_market_history(client, message):
     user_id = message.from_user.id
     user = await user_collection.find_one({"id": user_id})
@@ -346,17 +346,17 @@ async def update_mymarket_view(callback_query, direction):
     await callback_query.answer()
 
 
-@app.on_callback_query(filters.regex("^mymarket_next$"))
+@bot.on_callback_query(filters.regex("^mymarket_next$"))
 async def mymarket_next(client, callback_query):
     await update_mymarket_view(callback_query, "next")
 
 
-@app.on_callback_query(filters.regex("^mymarket_prev$"))
+@bot.on_callback_query(filters.regex("^mymarket_prev$"))
 async def mymarket_prev(client, callback_query):
     await update_mymarket_view(callback_query, "prev")
 
 
-@app.on_callback_query(filters.regex("^mymarket_close$"))
+@bot.on_callback_query(filters.regex("^mymarket_close$"))
 async def mymarket_close(client, callback_query):
     user_id = callback_query.from_user.id
     try:
