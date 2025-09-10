@@ -303,6 +303,19 @@ async def add_to_store_cmd(client, message):
         "img_url": character.get("img_url"),
         "name": character.get("name"),
         "anime": character.get("anime"),
+        "rarity": character.get("rarity"),
+        "id": character.get("id"),
+        "price": price,
+        "quantity": quantity,
+        "added_at": datetime.utcnow()
+    }
+    if expiry_minutes:
+        shop_doc["expires_at"] = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+
+    await Store_collection.insert_one(shop_doc)
+    await message.reply_text(
+        f"✅ **{character.get('name')}** added to store for {price} coins. Stock: {quantity}."
+    )
 
 
 ---------------- Cleanup Task ----------------
