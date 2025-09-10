@@ -18,9 +18,9 @@ from pyrogram.types import (
 from TEAMZYRO import app, db, user_collection, require_power, collection
 
 # ---------------- Config ----------------
-ADMIN_LOG_CHAT_ID = None  # Optional: admin log channel
+ADMIN_LOG_CHAT_ID = -1002891249230 # Optional: admin log channel
 
-market_collection = db["market"]
+shops_collection = db["shops"]
 user_state = {}         # user_id -> {"current_index": int, "shop_message_id": int}
 pending_confirm = {}    # nonce -> {"user_id": int, "index": int, "expires": datetime}
 
@@ -259,12 +259,12 @@ async def close_shop_cb(client, callback_query):
     await callback_query.answer("Shop closed.", show_alert=False)
 
 # ---------------- Add to Shop ----------------
-@app.on_message(filters.command("addmarket"))
+@app.on_message(filters.command("addshop"))
 @require_power("add_character")
 async def add_to_shop_cmd(client, message):
     args = message.text.split()[1:]
     if len(args) < 3:
-        return await message.reply_text("Usage: /addmarket [id] [price] [quantity] [expiry_minutes]")
+        return await message.reply_text("Usage: /addshop [id] [price] [quantity] [expiry_minutes]")
 
     char_id = args[0]
     try:
