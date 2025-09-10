@@ -307,7 +307,7 @@ async def _cleanup_pending_task():
             pending_confirm.pop(k, None)
         await asyncio.sleep(30)
 
-@app.on_message()
+@app.on_startup()
 async def _on_started(client):
     client.loop.create_task(_cleanup_pending_task())
     LOGGER.info("Store module started and cleanup task running.")
