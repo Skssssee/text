@@ -1,5 +1,5 @@
 import urllib.request
-from TEAMZYRO import ZYRO as bot, market_collection, user_collection
+from TEAMZYRO import ZYRO as bot, user_collection
 import uuid
 import requests
 import random
