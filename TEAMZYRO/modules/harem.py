@@ -195,38 +195,52 @@ async def harem_callback(client, callback_query):
     except Exception as e:
         print(f"Error in callback: {e}")
 
+
+rarity_map = {
+    1: "⚪️ Low",
+    2: "🟠 Medium",
+    3: "🔴 High",
+    4: "🎩 Special Edition",
+    5: "🪽 Elite Edition",
+    6: "🪐 Exclusive",
+    7: "💞 Valentine",
+    8: "🎃 Halloween",
+    9: "❄️ Winter",
+    10: "🏖 Summer",
+    11: "🎗 Royal",
+    12: "💸 Luxury Edition",
+    13: "🍃 echhi",
+    14: "🌧️ Rainy Edition",
+    15: "🎍 Festival"
+}
+
+
 @app.on_message(filters.command("hmode"))
 async def hmode_handler(client, message):
     user_id = message.from_user.id
+    args = message.text.split(maxsplit=1)
 
     # --- Case 1: User typed "/hmode rarityname" ---
-    args = message.text.split(maxsplit=1)
     if len(args) > 1:
-        rarity_input = args[1].strip().lower()  # lowercase normalize
+        rarity_input = args[1].strip().lower()
 
-        # Build dict with lowercase keys for easy match
-        rarity_lookup = {k.lower(): k for k in rarity_map2.keys()}
+        rarity_lookup = {v.lower(): v for v in rarity_map.values()}
 
-        if rarity_input in rarity_lookup:  # valid rarity
-            real_rarity = rarity_lookup[rarity_input]
+        if rarity_input in rarity_lookup:
+            rarity_value = rarity_lookup[rarity_input]
             await user_collection.update_one(
                 {"id": user_id},
-                {"$set": {"filter_rarity": real_rarity}},
+                {"$set": {"filter_rarity": rarity_value}},
                 upsert=True
             )
-
-            # Confirmation reply
             await message.reply_text(
-                f"✅ Rarity filter set to: <b>{real_rarity}</b>\n\n"
+                f"✅ Rarity filter set to: <b>{rarity_value}</b>\n\n"
                 "Open your collection with /harem to see filtered results.",
                 parse_mode=enums.ParseMode.HTML
             )
-
-            # 🎉 Popup style message (simulated by sending then deleting after few sec)
             confirm = await message.reply_text("🎉 Your rarity set successfully!")
             await asyncio.sleep(3)
             await confirm.delete()
-
             return
 
         elif rarity_input in ["all", "none"]:
@@ -235,19 +249,17 @@ async def hmode_handler(client, message):
                 {"$set": {"filter_rarity": None}},
                 upsert=True
             )
-
             await message.reply_text(
                 "✅ Rarity filter cleared. Showing all rarities.\n\n"
                 "Open your collection with /harem to see filtered results."
             )
-
             confirm = await message.reply_text("🎉 Your rarity set successfully!")
             await asyncio.sleep(3)
             await confirm.delete()
             return
 
         else:
-            available = ", ".join([f"{emoji} {name}" for name, emoji in rarity_map2.items()])
+            available = ", ".join(rarity_map.values())
             await message.reply_text(
                 f"❌ Invalid rarity: <b>{args[1]}</b>\n\n"
                 f"Available: {available}, All",
@@ -256,13 +268,12 @@ async def hmode_handler(client, message):
             return
 
     # --- Case 2: No rarity typed, show buttons ---
-    keyboard = []
-    row = []
-    for i, (rarity, emoji) in enumerate(rarity_map2.items(), 1):
+    keyboard, row = [], []
+    for i, value in enumerate(rarity_map.values(), 1):
         row.append(
             InlineKeyboardButton(
-                f"{emoji} {rarity}",
-                callback_data=f"set_rarity:{user_id}:{rarity}"
+                value,
+                callback_data=f"set_rarity:{user_id}:{value}"  # 👈 user_id lock
             )
         )
         if i % 2 == 0:
@@ -271,7 +282,6 @@ async def hmode_handler(client, message):
     if row:
         keyboard.append(row)
 
-    # Add "All" option
     keyboard.append([
         InlineKeyboardButton("All", callback_data=f"set_rarity:{user_id}:None")
     ])
@@ -286,23 +296,26 @@ async def hmode_handler(client, message):
 @app.on_callback_query(filters.regex(r"^set_rarity:"))
 async def set_rarity_callback(client, callback_query):
     try:
-        _, user_id, filter_rarity = callback_query.data.split(':')
-        user_id = int(user_id)
-        filter_rarity = None if filter_rarity == "None" else filter_rarity
+        _, owner_id, rarity_value = callback_query.data.split(':')
+        owner_id = int(owner_id)
 
-        if callback_query.from_user.id != user_id:
-            await callback_query.answer("⚠️ You can only change your own rarity filter!", show_alert=True)
+        # ✅ Security check: only owner can press
+        if callback_query.from_user.id != owner_id:
+            await callback_query.answer("⚠️ Not your menu!", show_alert=True)
             return
+
+        user_id = callback_query.from_user.id
+        rarity_value = None if rarity_value == "None" else rarity_value
 
         await user_collection.update_one(
             {"id": user_id},
-            {"$set": {"filter_rarity": filter_rarity}},
+            {"$set": {"filter_rarity": rarity_value}},
             upsert=True
         )
 
-        if filter_rarity:
+        if rarity_value:
             await callback_query.message.edit_text(
-                f"✅ Rarity filter set to: <b>{filter_rarity}</b>\n\n"
+                f"✅ Rarity filter set to: <b>{rarity_value}</b>\n\n"
                 "Open your collection with /harem to see filtered results.",
                 parse_mode=enums.ParseMode.HTML,
                 reply_markup=callback_query.message.reply_markup
@@ -314,10 +327,8 @@ async def set_rarity_callback(client, callback_query):
                 reply_markup=callback_query.message.reply_markup
             )
 
-        # 🎉 Popup confirmation
         await callback_query.answer("🎉 Your rarity set successfully!", show_alert=False)
 
     except Exception as e:
         print(f"Error in set_rarity callback: {e}")
         await callback_query.answer("❌ Error setting rarity filter", show_alert=True)
-        
