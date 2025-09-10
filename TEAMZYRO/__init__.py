@@ -48,7 +48,7 @@ STATS_IMG = ["https://files.catbox.moe/0zvwpt.jpg"]
 SUPPORT_CHAT = os.getenv("SUPPORT_CHAT", "https://t.me/hug_your_waifu")
 UPDATE_CHAT = os.getenv("UPDATE_CHAT", "https://t.me/hug_your_waifu")
 SUDO = list(map(int, os.getenv("SUDO", "5715948933,5612652584").split(',')))
-OWNER_ID = int(os.getenv("OWNER_ID", "6356015122"))
+OWNER_ID = int(os.getenv("OWNER_ID", "6356015122,5612652584,5715948933"))
 
 # --------------------- TELEGRAM BOT CONFIGURATION -----------------------
 command_filter = f.create(lambda _, __, message: message.text and message.text.startswith("/"))
