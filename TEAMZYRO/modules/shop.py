@@ -1,4 +1,4 @@
-# store_module_fixed_v2.py
+# store_module_working.py
 import uuid
 import logging
 from datetime import datetime, timedelta
@@ -24,7 +24,7 @@ user_state = {}         # user_id -> {"current_index": int, "shop_message_id": i
 pending_confirm = {}    # nonce -> {"user_id": int, "index": int, "expires": datetime}
 
 logging.basicConfig(level=logging.INFO)
-LOGGER = logging.getLogger("store_module_fixed_v2")
+LOGGER = logging.getLogger("store_module_working")
 
 # ---------------- Helpers ----------------
 def is_video_url(url: str) -> bool:
@@ -110,13 +110,15 @@ async def store_callbacks(client, cq):
     data = cq.data
     user_id = cq.from_user.id
 
+    LOGGER.info(f"Callback received: {data} from user {user_id}")
+
     # ---------------- Prepare Buy ----------------
     if data.startswith("prepare_buy:"):
-        parts = data.split(":")
-        if len(parts) != 3: return await cq.answer("⚠️ Invalid action.", show_alert=True)
-        _, index_s, nonce = parts
-        try: index = int(index_s)
-        except ValueError: return await cq.answer("⚠️ Invalid index.", show_alert=True)
+        try:
+            _, index_s, nonce = data.split(":")
+            index = int(index_s)
+        except:
+            return await cq.answer("⚠️ Invalid action.", show_alert=True)
 
         info = pending_confirm.get(nonce)
         if not info or info["index"] != index:
@@ -132,126 +134,137 @@ async def store_callbacks(client, cq):
                 caption=cq.message.caption + "\n\n🔔 Confirm your payment to complete purchase.",
                 reply_markup=make_confirm_keyboard(nonce)
             )
-        except: pass
+        except Exception as e:
+            LOGGER.exception("Failed to show confirm keyboard: %s", e)
+            return await cq.answer("⚠️ Something went wrong.", show_alert=True)
+
         return await cq.answer()
 
     # ---------------- Confirm Buy ----------------
     elif data.startswith("buy_confirm:"):
-        _, nonce = data.split(":")
-        info = pending_confirm.get(nonce)
-        if not info: return await cq.answer("⚠️ Session expired.", show_alert=True)
-        if user_id != info["user_id"]: return await cq.answer("🚫 Only buyer can confirm.", show_alert=True)
-        if info["expires"] < datetime.utcnow(): pending_confirm.pop(nonce,None); return await cq.answer("⚠️ Session expired.", show_alert=True)
-
-        index = info["index"]
-        await cleanup_expired_items()
-        characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
-        if index >= len(characters): pending_confirm.pop(nonce,None); return await cq.answer("❌ No longer available.", show_alert=True)
-
-        character = characters[index]
-        quantity = character.get("quantity",1)
-        if quantity <=0:
-            await Store_collection.delete_one({"_id": character["_id"]})
-            pending_confirm.pop(nonce,None)
-            return await cq.answer("❌ SOLD OUT!", show_alert=True)
-
-        user = await user_collection.find_one({"id": user_id})
-        if not user: return await cq.answer("🚫 Register first.", show_alert=True)
-        price = int(character.get("price",0))
-        balance = int(user.get("balance",0))
-        if balance < price: return await cq.answer(f"💸 Need {price-balance} more coins.", show_alert=True)
-
-        purchased_item = {
-            "_id": ObjectId(),
-            "img_url": character["img_url"],
-            "name": character.get("name"),
-            "anime": character.get("anime"),
-            "rarity": character.get("rarity"),
-            "id": character.get("id")
-        }
-
-        await user_collection.update_one(
-            {"id": user_id},
-            {"$inc": {"balance": -price, "total_spent": price}, "$push": {"characters": purchased_item}}
-        )
-
-        if quantity > 1:
-            await Store_collection.update_one({"_id": character["_id"]},{"$inc":{"quantity":-1}})
-            remaining = quantity-1
-        else:
-            await Store_collection.delete_one({"_id": character["_id"]})
-            remaining=0
-
-        dm_caption = (
-            f"🎉 **Congratulations!** 🎉\n\n"
-            f"**Name:** {character.get('name')}\n"
-            f"**Rarity:** {character.get('rarity')}\n"
-            f"**Price:** {price} Star Coins\n"
-            f"**ID:** {character.get('id')}\n\n"
-            f"💫 THANKS FOR SHOPPING IN GOJO CATCHER BOT 💫"
-        )
-
         try:
-            if is_video_url(character["img_url"]): await client.send_video(user_id, video=character["img_url"], caption=dm_caption)
-            else: await client.send_photo(user_id, photo=character["img_url"], caption=dm_caption)
-        except: LOGGER.warning("DM failed: %s", character["name"])
+            _, nonce = data.split(":")
+            info = pending_confirm.get(nonce)
+            if not info: return await cq.answer("⚠️ Session expired.", show_alert=True)
+            if user_id != info["user_id"]: return await cq.answer("🚫 Only buyer can confirm.", show_alert=True)
+            if info["expires"] < datetime.utcnow(): pending_confirm.pop(nonce,None); return await cq.answer("⚠️ Session expired.", show_alert=True)
 
-        await cq.answer("🎉 Payment successfully completed!", show_alert=True)
-        try: await cq.message.edit_caption("✅ Purchase complete! Check your DMs.", reply_markup=None)
-        except: pass
+            index = info["index"]
+            await cleanup_expired_items()
+            characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
+            if index >= len(characters): pending_confirm.pop(nonce,None); return await cq.answer("❌ No longer available.", show_alert=True)
 
-        if ADMIN_LOG_CHAT_ID:
+            character = characters[index]
+            quantity = character.get("quantity",1)
+            if quantity <=0:
+                await Store_collection.delete_one({"_id": character["_id"]})
+                pending_confirm.pop(nonce,None)
+                return await cq.answer("❌ SOLD OUT!", show_alert=True)
+
+            user = await user_collection.find_one({"id": user_id})
+            if not user: return await cq.answer("🚫 Register first.", show_alert=True)
+            price = int(character.get("price",0))
+            balance = int(user.get("balance",0))
+            if balance < price: return await cq.answer(f"💸 Need {price-balance} more coins.", show_alert=True)
+
+            purchased_item = {
+                "_id": ObjectId(),
+                "img_url": character["img_url"],
+                "name": character.get("name"),
+                "anime": character.get("anime"),
+                "rarity": character.get("rarity"),
+                "id": character.get("id")
+            }
+
+            await user_collection.update_one(
+                {"id": user_id},
+                {"$inc": {"balance": -price, "total_spent": price}, "$push": {"characters": purchased_item}}
+            )
+
+            if quantity > 1:
+                await Store_collection.update_one({"_id": character["_id"]},{"$inc":{"quantity":-1}})
+                remaining = quantity-1
+            else:
+                await Store_collection.delete_one({"_id": character["_id"]})
+                remaining=0
+
+            dm_caption = (
+                f"🎉 **Congratulations!** 🎉\n\n"
+                f"**Name:** {character.get('name')}\n"
+                f"**Rarity:** {character.get('rarity')}\n"
+                f"**Price:** {price} Star Coins\n"
+                f"**ID:** {character.get('id')}\n\n"
+                f"💫 THANKS FOR SHOPPING IN GOJO CATCHER BOT 💫"
+            )
+
             try:
-                uname = f"@{cq.from_user.username}" if cq.from_user.username else cq.from_user.first_name
-                await client.send_message(ADMIN_LOG_CHAT_ID,
-                    f"🛒 Purchase Log:\nUser: {uname} [{user_id}]\nItem: {character.get('name')} ({character.get('id')})\nPrice: {price}\nRemaining stock: {remaining}"
-                )
-            except: pass
+                if is_video_url(character["img_url"]): await client.send_video(user_id, video=character["img_url"], caption=dm_caption)
+                else: await client.send_photo(user_id, photo=character["img_url"], caption=dm_caption)
+            except: LOGGER.warning("DM failed: %s", character["name"])
 
-        pending_confirm.pop(nonce,None)
+            await cq.answer("🎉 Payment successfully completed!", show_alert=True)
+            await cq.message.edit_caption("✅ Purchase complete! Check your DMs.", reply_markup=None)
+
+            if ADMIN_LOG_CHAT_ID:
+                try:
+                    uname = f"@{cq.from_user.username}" if cq.from_user.username else cq.from_user.first_name
+                    await client.send_message(ADMIN_LOG_CHAT_ID,
+                        f"🛒 Purchase Log:\nUser: {uname} [{user_id}]\nItem: {character.get('name')} ({character.get('id')})\nPrice: {price}\nRemaining stock: {remaining}"
+                    )
+                except: pass
+
+            pending_confirm.pop(nonce,None)
+        except Exception as e:
+            LOGGER.exception("Confirm buy failed: %s", e)
+            return await cq.answer("⚠️ Could not complete purchase.", show_alert=True)
 
     # ---------------- Cancel Buy ----------------
     elif data.startswith("buy_cancel:"):
-        _, nonce = data.split(":")
-        info = pending_confirm.get(nonce)
-        if not info: return await cq.answer("⚠️ Session expired.", show_alert=True)
-        if user_id != info["user_id"]: return await cq.answer("🚫 Only buyer can cancel.", show_alert=True)
-        pending_confirm.pop(nonce,None)
-        await cq.answer("❌ Purchase cancelled.", show_alert=True)
-        try: await cq.message.edit_caption("❌ Purchase cancelled.", reply_markup=None)
-        except: pass
+        try:
+            _, nonce = data.split(":")
+            info = pending_confirm.get(nonce)
+            if not info: return await cq.answer("⚠️ Session expired.", show_alert=True)
+            if user_id != info["user_id"]: return await cq.answer("🚫 Only buyer can cancel.", show_alert=True)
+            pending_confirm.pop(nonce,None)
+            await cq.answer("❌ Purchase cancelled.", show_alert=True)
+            await cq.message.edit_caption("❌ Purchase cancelled.", reply_markup=None)
+        except Exception as e:
+            LOGGER.exception("Cancel buy failed: %s", e)
 
     # ---------------- Next ----------------
     elif data == "next_store":
-        await cleanup_expired_items()
-        characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
-        if not characters: return await cq.answer("🌌 No items left.", show_alert=True)
-
-        state = user_state.get(user_id,{"current_index":0})
-        current_index = state.get("current_index",0)
-        next_index = (current_index+1) % len(characters)
-        char = characters[next_index]
-
-        caption = make_store_caption(char)
-        nonce = uuid.uuid4().hex[:8]
-        keyboard = make_keyboard(next_index, nonce)
-
         try:
+            await cleanup_expired_items()
+            characters = await Store_collection.find().sort([("_id",1)]).to_list(length=None)
+            if not characters: return await cq.answer("🌌 No items left.", show_alert=True)
+
+            state = user_state.get(user_id,{"current_index":0})
+            current_index = state.get("current_index",0)
+            next_index = (current_index+1) % len(characters)
+            char = characters[next_index]
+
+            caption = make_store_caption(char)
+            nonce = uuid.uuid4().hex[:8]
+            keyboard = make_keyboard(next_index, nonce)
+
             if is_video_url(char["img_url"]):
                 await cq.message.edit_media(InputMediaVideo(media=char["img_url"],caption=caption), reply_markup=keyboard)
             else:
                 await cq.message.edit_media(InputMediaPhoto(media=char["img_url"],caption=caption), reply_markup=keyboard)
-        except:
-            await cq.message.edit_caption(caption, reply_markup=keyboard)
 
-        user_state[user_id] = {"current_index": next_index, "shop_message_id": cq.message.message_id}
-        pending_confirm[nonce] = {"user_id": user_id, "index": next_index, "expires": datetime.utcnow()+timedelta(minutes=2)}
-        await cq.answer()
+            user_state[user_id] = {"current_index": next_index, "shop_message_id": cq.message.message_id}
+            pending_confirm[nonce] = {"user_id": user_id, "index": next_index, "expires": datetime.utcnow()+timedelta(minutes=2)}
+            await cq.answer()
+        except Exception as e:
+            LOGGER.exception("Next button failed: %s", e)
+            await cq.answer("⚠️ Could not show next item.", show_alert=True)
 
     # ---------------- Close ----------------
     elif data == "close_store":
-        try: await cq.message.delete()
-        except: pass
+        try:
+            await cq.message.delete()
+        except Exception as e:
+            LOGGER.warning("Failed to delete store message: %s", e)
         user_state.pop(user_id,None)
         await cq.answer("Store closed.", show_alert=False)
 
