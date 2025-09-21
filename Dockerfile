@@ -1,6 +1,11 @@
 FROM python:3.8.5-slim-buster
 
-ENV PIP_NO_CACHE_DIR 1
+ENV PIP_NO_CACHE_DIR=1
+
+# Install system dependencies (git required for Pyrogram)
+RUN apt-get update && \
+    apt-get install -y git && \
+    rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and setuptools
 RUN pip3 install --upgrade pip setuptools
