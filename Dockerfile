@@ -1,10 +1,12 @@
-FROM python:3.8.5-slim-buster
+# Use a modern Python base image
+FROM python:3.12-slim
 
+# Disable pip cache to reduce image size
 ENV PIP_NO_CACHE_DIR=1
 
 # Install system dependencies (git required for Pyrogram)
 RUN apt-get update && \
-    apt-get install -y git && \
+    apt-get install -y git build-essential && \
     rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip and setuptools
@@ -12,8 +14,6 @@ RUN pip3 install --upgrade pip setuptools
 
 # Copy application code
 COPY . /app/
-
-# Set working directory
 WORKDIR /app/
 
 # Install Python dependencies
