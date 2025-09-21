@@ -1,16 +1,18 @@
-FROM nikolaik/python-nodejs:python3.10-nodejs19
+FROM python:3.8.5-slim-buster
 
-RUN sed -i 's|http://deb.debian.org/debian|http://archive.debian.org/debian|g' /etc/apt/sources.list && \
-    sed -i '/security.debian.org/d' /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg aria2 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+ENV PIP_NO_CACHE_DIR 1
 
+# Upgrade pip and setuptools
+RUN pip3 install --upgrade pip setuptools
+
+# Copy application code
 COPY . /app/
+
+# Set working directory
 WORKDIR /app/
 
-RUN python -m pip install --no-cache-dir --upgrade pip
-RUN pip3 install --no-cache-dir --upgrade --requirement requirements.txt
+# Install Python dependencies
+RUN pip3 install --no-cache-dir -U -r requirements.txt
 
-CMD bash start
+# Run the bot
+CMD ["python3", "-m", "TEAMZYRO"]
